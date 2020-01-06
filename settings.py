@@ -22,7 +22,7 @@ POWERUP_TIME = 10000
 #set up game folders
 GAME_FOLDER = path.dirname(__file__)
 IMG_FOLDER = path.join(GAME_FOLDER, 'img')
-SOUND_FOLDER = path.join(GAME_FOLDER, 'sound')
+SOUND_FOLDER = path.join(GAME_FOLDER, 'snd')
 
 SPRITESHEET = "Samroiyodgame_img_sheet.png"
 

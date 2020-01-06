@@ -1,6 +1,6 @@
-#Sprite classes for Samroiyod game 
-import pygame as pg
+#Sprite classes for Samroiyod game import pygame as pg
 import random
+import pygame as pg
 from settings import *
 
 class Spritesheet:

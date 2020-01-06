@@ -13,16 +13,18 @@ increase drop speed with less enemys
 hyperspace
 '''
 from os import path ,environ
-import pygame as pg
 import random
-from settings import *
-from sprites import *
+import pygame as pg
+
+import settings
+import sprites
+from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion
 
 class Game(object):
 	def __init__(self):
 		#Initialize game window, etc		
 		#set game screen placement
-		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (COMX,COMY)
+		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (settings.COMX,settings.COMY)
 		pg.mixer.pre_init(44100, -16, 1, 512)
 		pg.init()
 		pg.joystick.init()
@@ -34,7 +36,7 @@ class Game(object):
 			self.joystick.init()
 
 		#Set logo and gamescreen etc	
-		self.win = pg.display.set_mode((SCREENWIDTH,SCREENHEIGHT))
+		self.win = pg.display.set_mode((settings.SCREENWIDTH,settings.SCREENHEIGHT))
 		self.logo = pg.image.load(path.join(IMG_FOLDER, 'eplogo_small.png'))
 		pg.display.set_icon(self.logo)
 		pg.display.set_caption(GAMENAME)
@@ -58,7 +60,7 @@ class Game(object):
 
 	def load_data(self):
 		#Load all image graphics
-		self.sprite_sheet = Spritesheet(path.join(IMG_FOLDER, SPRITESHEET))
+		self.sprite_sheet = sprites.Spritesheet(path.join(IMG_FOLDER, SPRITESHEET))
 		self.background = pg.image.load(path.join(IMG_FOLDER, 'Schoolbg.jpg')).convert()
 		self.background_scaled = pg.transform.scale(self.background, (SCREENWIDTH,SCREENHEIGHT))
 		self.background_rect = self.background_scaled.get_rect()
