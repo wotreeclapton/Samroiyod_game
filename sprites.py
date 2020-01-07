@@ -1,7 +1,7 @@
 #Sprite classes for Samroiyod game import pygame as pg
 import random
 import pygame as pg
-from settings import *
+import methods as meth
 
 class Spritesheet:
 	def __init__(self, filename):
@@ -19,8 +19,8 @@ class Player(pg.sprite.Sprite):
 		self.game = game
 		self.image = self.game.sprite_sheet.get_image(354 , 256, 64, 64)
 		self.rect = self.image.get_rect()
-		self.rect.centerx = SCREENWIDTH / 2
-		self.rect.bottom = SCREENHEIGHT - 6
+		self.rect.centerx = meth.SCREENWIDTH / 2
+		self.rect.bottom = meth.SCREENHEIGHT - 6
 		self.speedx = 1
 		self.shoot_delay = 750
 		self.last_shot = pg.time.get_ticks()
@@ -35,11 +35,11 @@ class Player(pg.sprite.Sprite):
 		#unhide if hidden
 		if self.hidden and pg.time.get_ticks() - self.hide_timer > 1000:
 			self.hidden = False
-			self.rect.centerx = SCREENWIDTH / 2
-			self.rect.bottom = SCREENHEIGHT - 6
+			self.rect.centerx = meth.SCREENWIDTH / 2
+			self.rect.bottom = meth.SCREENHEIGHT - 6
 
 		#timeout for powerups
-		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > POWERUP_TIME:
+		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > meth.POWERUP_TIME:
 			self.power_level -= 1
 			self.power_time = pg.time.get_ticks()
 
@@ -63,8 +63,8 @@ class Player(pg.sprite.Sprite):
 			pass
 
 		self.rect.x += self.speedx
-		if self.rect.right > SCREENWIDTH:
-			self.rect.right = SCREENWIDTH
+		if self.rect.right > meth.SCREENWIDTH:
+			self.rect.right = meth.SCREENWIDTH
 		if self.rect.left < 0:
 			self.rect.left = 0
 
@@ -94,25 +94,25 @@ class Player(pg.sprite.Sprite):
 	def hide(self):
 		self.hidden = True
 		self.hide_timer = pg.time.get_ticks()
-		self.rect.center = (SCREENWIDTH / 2, SCREENHEIGHT + 200)
+		self.rect.center = (meth.SCREENWIDTH / 2, meth.SCREENHEIGHT + 200)
 
 	def player_level_up_anim(self):
 		#move player 1 px every frame
 		while True:
 			self.game.clock.tick(160)
-			if self.rect.centerx < SCREENWIDTH / 2:
+			if self.rect.centerx < meth.SCREENWIDTH / 2:
 				self.rect.centerx += 1
-			elif self.rect.centerx > SCREENWIDTH / 2:
+			elif self.rect.centerx > meth.SCREENWIDTH / 2:
 				self.rect.centerx -= 1
-			elif self.rect.centerx == SCREENWIDTH/2:
+			elif self.rect.centerx == meth.SCREENWIDTH/2:
 				while True:
 					self.game.clock.tick(160)
-					if self.rect.top > SCREENHEIGHT/2:
+					if self.rect.top > meth.SCREENHEIGHT/2:
 						self.rect.top -= 1
 					else:
 						break
 					self.game.draw()
-			if self.rect.centerx == SCREENWIDTH/2 and self.rect.top == SCREENHEIGHT/2:
+			if self.rect.centerx == meth.SCREENWIDTH/2 and self.rect.top == meth.SCREENHEIGHT/2:
 				break	
 			self.game.draw()
 
@@ -141,7 +141,7 @@ class MobBullet(Bullet):
 
 	def update(self):
 		self.rect.y += self.speedy
-		if self.rect.top > SCREENHEIGHT:
+		if self.rect.top > meth.SCREENHEIGHT:
 			self.kill()	
 
 class Mob(pg.sprite.Sprite):
@@ -207,7 +207,6 @@ class Mob(pg.sprite.Sprite):
 						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 205, 64, 64), (50, 50)),
 						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 205, 64, 64), (50, 50))]
 
-
 	def update(self):
 		#Change image
 		img_now = pg.time.get_ticks()
@@ -243,7 +242,7 @@ class Boss(pg.sprite.Sprite):
 		self. game = game
 		self.image = pg.transform.scale(self.game.sprite_sheet.get_image(497 , 256, 72, 96), (50, 66))
 		self.rect = self.image.get_rect()
-		self.rect.x = SCREENWIDTH + 1
+		self.rect.x = meth.SCREENWIDTH + 1
 		self.rect.y = 28
 		self.speedx = 2
 
@@ -272,7 +271,7 @@ class PowerUp(pg.sprite.Sprite):
 
 	def update(self):
 		self.rect.y += self.speedy
-		if self.rect.top >= SCREENHEIGHT + 1:
+		if self.rect.top >= meth.SCREENHEIGHT + 1:
 			self.kill()
 			
 class Explosion(pg.sprite.Sprite):

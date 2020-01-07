@@ -1,3 +1,10 @@
+#! python 3
+'''
+SAMROIYOD GAME LAUNCHER developed by Mr Steven J walden
+    Nov. 2020
+    SAMROIYOD, PRACHUAP KIRI KHAN, THAILAND
+[See License.txt file]
+'''
 '''
 enemy move down check
 level up clear bullets and bosses
@@ -12,11 +19,16 @@ create a delay and message on level change
 increase drop speed with less enemys
 hyperspace
 '''
-from os import path ,environ
+__author__ = 'Mr Steven J Walden'
+__version__ = '1.0.0'
+
+from os import environ
+import sys
 import random
 import pygame as pg
 
-import settings
+import methods
+from methods import change_dir
 import sprites
 from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion
 
@@ -24,7 +36,7 @@ class Game(object):
 	def __init__(self):
 		#Initialize game window, etc		
 		#set game screen placement
-		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (settings.COMX,settings.COMY)
+		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (methods.COMX,methods.COMY)
 		pg.mixer.pre_init(44100, -16, 1, 512)
 		pg.init()
 		pg.joystick.init()
@@ -36,10 +48,11 @@ class Game(object):
 			self.joystick.init()
 
 		#Set logo and gamescreen etc	
-		self.win = pg.display.set_mode((settings.SCREENWIDTH,settings.SCREENHEIGHT))
-		self.logo = pg.image.load(path.join(IMG_FOLDER, 'eplogo_small.png'))
+		self.win = pg.display.set_mode((methods.SCREENWIDTH,methods.SCREENHEIGHT))
+		with change_dir('img'):
+			self.logo = pg.image.load('eplogo_small.png')
 		pg.display.set_icon(self.logo)
-		pg.display.set_caption(GAMENAME)
+		pg.display.set_caption('Samroiyod invaders V {}'.format(__version__))
 		self.clock = pg.time.Clock()
 
 		self.load_data()
@@ -53,43 +66,45 @@ class Game(object):
 		self.mob_direction =True
 		self.direction_switch = False
 		self.game_on = True
-		self.move_delay = 550
+		self.move_delay = 600
 		self.speedx = 5
 		self.movey = 12
 		self.game_level = 1
 
 	def load_data(self):
 		#Load all image graphics
-		self.sprite_sheet = sprites.Spritesheet(path.join(IMG_FOLDER, SPRITESHEET))
-		self.background = pg.image.load(path.join(IMG_FOLDER, 'Schoolbg.jpg')).convert()
-		self.background_scaled = pg.transform.scale(self.background, (SCREENWIDTH,SCREENHEIGHT))
+		with change_dir('img'):
+			self.sprite_sheet = sprites.Spritesheet("Samroiyodgame_img_sheet.png")
+			self.background = pg.image.load('Schoolbg.jpg').convert()
+		self.background_scaled = pg.transform.scale(self.background, (methods.SCREENWIDTH,methods.SCREENHEIGHT))
 		self.background_rect = self.background_scaled.get_rect()
 
 
 		#Load all games sounds
-		self.shoot_sound = pg.mixer.Sound(path.join(SOUND_FOLDER, 'bullet_shoot.wav'))
-		self.shoot_sound.set_volume(0.04)
-		self.normal_expl_sound = pg.mixer.Sound(path.join(SOUND_FOLDER, 'enemy_killed.wav'))
-		self.normal_expl_sound.set_volume(0.04)
-		self.enemy_sounds = []
-		for snd in ['fastinvader1.wav','fastinvader2.wav','fastinvader3.wav','fastinvader4.wav']:
-			self.enemy_sounds.append(pg.mixer.Sound(path.join(SOUND_FOLDER, snd)))
-		self.enemy_sounds[0].set_volume(0.08)
-		self.enemy_sounds[3].set_volume(0.1)
-		self.expl_sounds = []
-		for snd in ['Explosion1.wav','Explosion2.wav']:
-			self.expl_sounds.append(pg.mixer.Sound(path.join(SOUND_FOLDER, snd)))
-		self.boss_sound = pg.mixer.Sound(path.join(SOUND_FOLDER, 'ufo_lowpitch.wav'))
-		self.boss_sound.set_volume(0.05)
-		self.powerup_sounds = []
-		for snd in ['guns.wav','shield.wav','extra_life.wav']:
-			self.powerup_sounds.append(pg.mixer.Sound(path.join(SOUND_FOLDER, snd)))
-		self.powerup_sounds[0].set_volume(0.15)
-		self.powerup_sounds[1].set_volume(0.16) 
-		self.powerup_sounds[2].set_volume(0.1)
-		pg.mixer.music.load(path.join(SOUND_FOLDER, 'tgfcoder-FrozenJam-SeamlessLoop.ogg'))
-		pg.mixer.music.set_volume(0.2)
-		self.death_explosion = pg.mixer.Sound(path.join(SOUND_FOLDER, 'death_explosion.wav'))
+		with change_dir('snd'):
+			self.shoot_sound = pg.mixer.Sound('bullet_shoot.wav')
+			self.shoot_sound.set_volume(0.04)
+			self.normal_expl_sound = pg.mixer.Sound('enemy_killed.wav')
+			self.normal_expl_sound.set_volume(0.04)
+			self.enemy_sounds = []
+			for snd in ['fastinvader1.wav','fastinvader2.wav','fastinvader3.wav','fastinvader4.wav']:
+				self.enemy_sounds.append(pg.mixer.Sound(snd))
+			self.enemy_sounds[0].set_volume(0.08)
+			self.enemy_sounds[3].set_volume(0.1)
+			self.expl_sounds = []
+			for snd in ['Explosion1.wav','Explosion2.wav']:
+				self.expl_sounds.append(pg.mixer.Sound(snd))
+			self.boss_sound = pg.mixer.Sound('ufo_lowpitch.wav')
+			self.boss_sound.set_volume(0.05)
+			self.powerup_sounds = []
+			for snd in ['guns.wav','shield.wav','extra_life.wav']:
+				self.powerup_sounds.append(pg.mixer.Sound(snd))
+			self.powerup_sounds[0].set_volume(0.15)
+			self.powerup_sounds[1].set_volume(0.16) 
+			self.powerup_sounds[2].set_volume(0.1)
+			pg.mixer.music.load('tgfcoder-FrozenJam-SeamlessLoop.ogg')
+			pg.mixer.music.set_volume(0.2)
+			self.death_explosion = pg.mixer.Sound('death_explosion.wav')
 
 	def newmob(self, x, y):
 		self.enemy = Mob(x, y, 'mob', 100,  g)
@@ -98,7 +113,7 @@ class Game(object):
 
 	def enemy_check(self):
 		for enemy in self.mobs.sprites() + self.Bmobs.sprites():
-			if enemy.rect.right >= SCREENWIDTH or enemy.rect.left <= 0:
+			if enemy.rect.right >= methods.SCREENWIDTH or enemy.rect.left <= 0:
 				self.direction_switch = True
 
 		if self.direction_switch and self.mob_direction:
@@ -123,20 +138,20 @@ class Game(object):
 			self.player.player_level_up_anim()
 			return True		
 
-	def play_mob_movesound(self):
-		if len(self.mobs) + len(self.Bmobs) > 0 and self.player.alive():
-			sound_delay = self.move_delay
-			if sound_delay < 150:
-				sound_delay = 150
-			now = pg.time.get_ticks()
-			if now - self.sound_last_update >= sound_delay:
-				self.sound_last_update = now
-				if self.sound:
-					self.enemy_sounds[3].play()
-					self.sound = False	
-				else:
-					self.enemy_sounds[0].play()	
-					self.sound = True				
+	# def play_mob_movesound(self):
+	# 	if len(self.mobs) + len(self.Bmobs) > 0 and self.player.alive():
+	# 		sound_delay = self.move_delay
+	# 		if sound_delay < 150:
+	# 			sound_delay = 150
+	# 		now = pg.time.get_ticks()
+	# 		if now - self.sound_last_update >= sound_delay:
+	# 			self.sound_last_update = now
+	# 			if self.sound:
+	# 				self.enemy_sounds[3].play()
+	# 				self.sound = False	
+	# 			else:
+	# 				self.enemy_sounds[0].play()	
+	# 				self.sound = True				
 
 	def add_boss(self):
 		now = pg.time.get_ticks()
@@ -173,15 +188,15 @@ class Game(object):
 		return(self.score)
 	
 	def add_mobs(self):
-		Bmobs_y_list = [76, 146]
+		Bmobs_y_list = [100, 166]
 		for ypos in Bmobs_y_list:
-			for i in range(1):
+			for i in range(10):
 				self.bigenemy = Mob(((i+1)*70)-15, ypos, 'Bmob', 50,  g)
 				self.all_sprites.add(self.bigenemy)
 				self.Bmobs.add(self.bigenemy)
-		mob_y_list = [216, 286, 356]
+		mob_y_list = [227, 297, 367]
 		for ypos in mob_y_list:
-			for i in range (1):
+			for i in range (10):
 				self.newmob(((i+1)*70)-15, ypos)
 
 	def powerup_collect(self):
@@ -209,8 +224,9 @@ class Game(object):
 				pass	
 
 	def draw_text(self, surf, text, size, x, y):
-		font = pg.font.Font(path.join(IMG_FOLDER, 'HARLOWSI.ttf'), size)
-		self.text_surface = font.render(text, True, WHITE)
+		with change_dir('img'):
+			font = pg.font.Font('HARLOWSI.ttf', size)
+		self.text_surface = font.render(text, True, methods.WHITE)
 		self.text_rect = self.text_surface.get_rect()
 		surf.blit(self.text_surface, (x,y))
 
@@ -222,8 +238,8 @@ class Game(object):
 		self.fill = (shield_amm / 100) * self.bar_length
 		self.outline_rect = pg.Rect(x, y, self.bar_length, self.bar_height)
 		self.fill_rect = pg.Rect(x, y, self.fill, self.bar_height)
-		pg.draw.rect(surf, GREEN, self.fill_rect)
-		pg.draw.rect(surf, WHITE, self.outline_rect, 1)
+		pg.draw.rect(surf, methods.GREEN, self.fill_rect)
+		pg.draw.rect(surf, methods.WHITE, self.outline_rect, 1)
 
 	def player_death(self, hit):
 		self.expl = Explosion(hit, 'boss', 170, g)
@@ -242,6 +258,28 @@ class Game(object):
 		self.player_image_resized = pg.transform.scale(self.player.image, (20, 20))
 		for i in range (self.player.lives):
 			surf.blit(self.player_image_resized, (x + (i * 25), y))
+
+	def update_enemy_speed(self):
+		mob_count = len(self.mobs.sprites()) + len(self.Bmobs.sprites())
+		if mob_count <= 4:
+			self.move_delay = 30
+			self.speedx = 12
+			self.movey = 50
+		elif mob_count <= 8:
+			self.move_delay = 80
+			self.movey = 30
+		elif mob_count <= 12:
+			self.move_delay = 200
+			self.speedx = 9
+			self.movey =20
+		elif mob_count <= 22:
+			self.move_delay = 300
+			self.speedx = 7
+			self.movey =18
+		elif mob_count <= 32:
+			self.move_delay = 400
+			self.speedx = 6
+			self.movey =14
 
 	def new(self):
 		#Start a new game
@@ -266,7 +304,7 @@ class Game(object):
 		#Game loop	
 		self.playing = True
 		while self.playing:
-			self.clock.tick(FPS)
+			self.clock.tick(methods.FPS)
 			self.events()
 			self.update()
 			self.draw()
@@ -276,7 +314,7 @@ class Game(object):
 		self.all_sprites.update()
 		
 		#Play enemy move sound
-		self.play_mob_movesound()
+		# self.play_mob_movesound()
 
 		#Spawn a boss randomly		
 		self.add_boss()
@@ -284,16 +322,16 @@ class Game(object):
 		#Check to see if a bullet hit a mob
 		self.score = self.enemy_hit(self.mobs, 10, False)	
 		self.score = self.enemy_hit(self.Bmobs, 30, False)
-		self.score = self.enemy_hit(self.bosses, 50, True)
+		self.score = self.enemy_hit(self.bosses, 100, True)
 
 		#Check if player has killed all the mobs
 		if self.level_check():
 			#reset all mobs
-			self.move_delay = 550
+			self.move_delay = 600
 			self.speedx = 5
 			self.mob_direction = True
 			self.add_mobs()
-			self.player.rect.bottom = SCREENHEIGHT - 6
+			self.player.rect.bottom = methods.SCREENHEIGHT - 6
 
 		#Check to see if a bullet has hit the player
 		hits = pg.sprite.spritecollide(self.player, self.mob_bullets, True)
@@ -334,21 +372,7 @@ class Game(object):
 			self.enemy_check()			
 
 		#Update enemy speed
-		mob_count = len(self.mobs.sprites()) + len(self.Bmobs.sprites())
-		if mob_count <= 2:
-			self.move_delay = 30
-			self.speedx = 12
-			self.movey = 50
-		elif mob_count <= 6:
-			self.move_delay = 100
-			self.movey = 30
-		elif mob_count <= 10:
-			self.move_delay = 200
-			self.speedx = 9
-			self.movey =20
-		elif mob_count <= 40:
-			self.move_delay = 400
-			self.speedx = 7
+		self.update_enemy_speed()
 
 	def events(self):
 		#Game loop - events
@@ -381,9 +405,9 @@ class Game(object):
 	def show_go_screen(self):
 		#Game over/continue screen
 		self.win.blit(self.background_scaled, self.background_rect)
-		self.draw_text(self.win, "Samroiyod game", 64, SCREENWIDTH / 3, SCREENHEIGHT / 4)
-		self.draw_text(self.win, 'Arrow keys to move, Space to fire', 22, SCREENWIDTH /3, SCREENHEIGHT / 2)
-		self.draw_text(self.win, 'Press Y to start', 18, SCREENWIDTH / 3, SCREENHEIGHT * 3/4)
+		self.draw_text(self.win, "Samroiyod game", 64, methods.SCREENWIDTH / 3, methods.SCREENHEIGHT / 4)
+		self.draw_text(self.win, 'Arrow keys to move, Space to fire', 22, methods.SCREENWIDTH /3, methods.SCREENHEIGHT / 2)
+		self.draw_text(self.win, 'Press Y to start', 18, methods.SCREENWIDTH / 3, methods.SCREENHEIGHT * 3/4)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
 			self.clock.tick(FPS)
@@ -402,15 +426,20 @@ class Game(object):
 
 			pg.display.update()
 
+print(sys.executable)
 
-g = Game()
-g.show_start_screen()
-while g.game_on:
-	g.new()
-	g.show_go_screen()
+if __name__ == '__main__':
+	print("Author:", __author__)
+	print("App version:",__version__)
+
+	g = Game()
+	g.show_start_screen()
+	while g.game_on:
+		g.new()
+		g.show_go_screen()
 
 
-pg.quit()
+	pg.quit()
 
 
 
