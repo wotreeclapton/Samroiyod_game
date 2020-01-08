@@ -27,7 +27,7 @@ class Player(pg.sprite.Sprite):
 		self.shield = 100
 		self.power_level = 1
 		self.power_time = pg.time.get_ticks()
-		self.lives = 3
+		self.lives = 1
 		self.hidden = False
 		self.hide_timer = pg.time.get_ticks()
 
@@ -99,7 +99,7 @@ class Player(pg.sprite.Sprite):
 	def player_level_up_anim(self):
 		#move player 1 px every frame
 		while True:
-			self.game.clock.tick(160)
+			self.game.clock.tick(140)
 			if self.rect.centerx < meth.SCREENWIDTH / 2:
 				self.rect.centerx += 1
 			elif self.rect.centerx > meth.SCREENWIDTH / 2:
@@ -235,6 +235,26 @@ class Mob(pg.sprite.Sprite):
 		mob_bullet = MobBullet(self.rect.centerx, self.rect.bottom, self.game)
 		self.game.all_sprites.add(mob_bullet)
 		self.game.mob_bullets.add(mob_bullet)
+
+class StartMob(Mob):
+	"""Inherant class"""
+	def __init__(self, x, y, img_type, frame_rate, game):
+		super(StartMob, self).__init__(x, y, img_type, frame_rate, game)
+
+	def update(self):
+		#Change image
+		img_now = pg.time.get_ticks()
+		if img_now - self.img_last_update >= self.frame_rate:
+			self.img_last_update = img_now			
+			if self.frame == len(self.mob_images[self.img_type]):		
+				self.frame = 0
+			if self.img_type == "Bmob": #Change image size if big mob
+				self.image = pg.transform.scale(self.mob_images[self.img_type][self.frame], (64, 64))
+				self.frame += 1
+			else:
+				self.image = self.mob_images[self.img_type][self.frame]
+				self.frame += 1
+		
 
 class Boss(pg.sprite.Sprite):
 	def __init__(self, game):

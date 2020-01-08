@@ -20,23 +20,23 @@ increase drop speed with less enemys
 hyperspace
 '''
 __author__ = 'Mr Steven J Walden'
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 from os import environ
 import sys
 import random
 import pygame as pg
 
-import methods
+import methods as meth
 from methods import change_dir
 import sprites
-from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion
+from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob
 
 class Game(object):
 	def __init__(self):
 		#Initialize game window, etc		
 		#set game screen placement
-		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (methods.COMX,methods.COMY)
+		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (meth.COMX,meth.COMY)
 		pg.mixer.pre_init(44100, -16, 1, 512)
 		pg.init()
 		pg.joystick.init()
@@ -48,7 +48,7 @@ class Game(object):
 			self.joystick.init()
 
 		#Set logo and gamescreen etc	
-		self.win = pg.display.set_mode((methods.SCREENWIDTH,methods.SCREENHEIGHT))
+		self.win = pg.display.set_mode((meth.SCREENWIDTH,meth.SCREENHEIGHT))
 		with change_dir('img'):
 			self.logo = pg.image.load('eplogo_small.png')
 		pg.display.set_icon(self.logo)
@@ -70,13 +70,18 @@ class Game(object):
 		self.speedx = 5
 		self.movey = 12
 		self.game_level = 1
+		self.start_screen_pass = False
 
 	def load_data(self):
 		#Load all image graphics
 		with change_dir('img'):
 			self.sprite_sheet = sprites.Spritesheet("Samroiyodgame_img_sheet.png")
 			self.background = pg.image.load('Schoolbg.jpg').convert()
-		self.background_scaled = pg.transform.scale(self.background, (methods.SCREENWIDTH,methods.SCREENHEIGHT))
+			self.start_background = pg.image.load('start_screen.jpg').convert()
+			self.go_background = pg.image.load('game_over_screen.jpg').convert()
+		self.background_scaled = pg.transform.scale(self.background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
+		self.start_background_scaled = pg.transform.scale(self.start_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
+		self.go_background_scaled = pg.transform.scale(self.go_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
 		self.background_rect = self.background_scaled.get_rect()
 
 
@@ -102,9 +107,8 @@ class Game(object):
 			self.powerup_sounds[0].set_volume(0.15)
 			self.powerup_sounds[1].set_volume(0.16) 
 			self.powerup_sounds[2].set_volume(0.1)
-			pg.mixer.music.load('tgfcoder-FrozenJam-SeamlessLoop.ogg')
-			pg.mixer.music.set_volume(0.2)
 			self.death_explosion = pg.mixer.Sound('death_explosion.wav')
+			self.death_explosion.set_volume(0.5)
 
 	def newmob(self, x, y):
 		self.enemy = Mob(x, y, 'mob', 100,  g)
@@ -113,7 +117,7 @@ class Game(object):
 
 	def enemy_check(self):
 		for enemy in self.mobs.sprites() + self.Bmobs.sprites():
-			if enemy.rect.right >= methods.SCREENWIDTH or enemy.rect.left <= 0:
+			if enemy.rect.right >= meth.SCREENWIDTH or enemy.rect.left <= 0:
 				self.direction_switch = True
 
 		if self.direction_switch and self.mob_direction:
@@ -223,12 +227,16 @@ class Game(object):
 				#starts the bonus level
 				pass	
 
-	def draw_text(self, surf, text, size, x, y):
+	def draw_text(self, surf, text, size, x, y, pos):
+		self.font_type = ['HARLOWSI.ttf','OCRAEXT.ttf']
 		with change_dir('img'):
-			font = pg.font.Font('HARLOWSI.ttf', size)
-		self.text_surface = font.render(text, True, methods.WHITE)
+			font = pg.font.Font(self.font_type[pos], size)
+		self.text_surface = font.render(text, True, meth.WHITE)
 		self.text_rect = self.text_surface.get_rect()
-		surf.blit(self.text_surface, (x,y))
+		if pos == 1:
+			surf.blit(self.text_surface, ((x - self.text_rect.width / 2) ,y))
+		else:
+			surf.blit(self.text_surface, (x,y))
 
 	def draw_shields(self, surf, x, y, shield_amm):
 		if shield_amm <= 0:
@@ -238,11 +246,11 @@ class Game(object):
 		self.fill = (shield_amm / 100) * self.bar_length
 		self.outline_rect = pg.Rect(x, y, self.bar_length, self.bar_height)
 		self.fill_rect = pg.Rect(x, y, self.fill, self.bar_height)
-		pg.draw.rect(surf, methods.GREEN, self.fill_rect)
-		pg.draw.rect(surf, methods.WHITE, self.outline_rect, 1)
+		pg.draw.rect(surf, meth.GREEN, self.fill_rect)
+		pg.draw.rect(surf, meth.WHITE, self.outline_rect, 1)
 
 	def player_death(self, hit):
-		self.expl = Explosion(hit, 'boss', 170, g)
+		self.expl = Explosion(hit, 'boss', 100, g)
 		self.all_sprites.add(self.expl)
 		#removes all the bullets after player death
 		for bullet in self.mob_bullets.sprites():
@@ -254,7 +262,7 @@ class Game(object):
 		self.boss_sound.fadeout(2000)
 		self.player.kill()
 
-	def draw_lives(self, surf, x, y, remaining_lives):
+	def draw_lives(self, surf, x, y):
 		self.player_image_resized = pg.transform.scale(self.player.image, (20, 20))
 		for i in range (self.player.lives):
 			surf.blit(self.player_image_resized, (x + (i * 25), y))
@@ -293,10 +301,14 @@ class Game(object):
 		self.powerups = pg.sprite.Group()
 		self.player = Player(g)
 		self.all_sprites.add(self.player)
+		self.start_screen_pass = False
 
 		self.add_mobs()
 		
 		self.waiting = True
+		with change_dir('snd'):
+			pg.mixer.music.load('tgfcoder-FrozenJam-SeamlessLoop.ogg')
+		pg.mixer.music.set_volume(0.2)
 		pg.mixer.music.play(loops=-1)
 		self.run()
 
@@ -304,7 +316,7 @@ class Game(object):
 		#Game loop	
 		self.playing = True
 		while self.playing:
-			self.clock.tick(methods.FPS)
+			self.clock.tick(meth.FPS)
 			self.events()
 			self.update()
 			self.draw()
@@ -331,7 +343,7 @@ class Game(object):
 			self.speedx = 5
 			self.mob_direction = True
 			self.add_mobs()
-			self.player.rect.bottom = methods.SCREENHEIGHT - 6
+			self.player.rect.bottom = meth.SCREENHEIGHT - 6
 
 		#Check to see if a bullet has hit the player
 		hits = pg.sprite.spritecollide(self.player, self.mob_bullets, True)
@@ -392,37 +404,81 @@ class Game(object):
 	def draw(self):
 		#Game loop - draw
 		self.win.blit(self.background_scaled, self.background_rect)	
-		self.draw_text(self.win, str(self.score), 22, 112, 2)
+		self.draw_text(surf=self.win, text=str(self.score), size=22, x=112, y=2, pos=0)
 		self.draw_shields(self.win, 166, 8, self.player.shield)
-		self.draw_lives(self.win, 278, 3, self.player.lives)
+		self.draw_lives(self.win, 278, 3)
 		self.all_sprites.draw(self.win)
 		pg.display.update()
 
 	def show_start_screen(self):
-		#Game start screen
-		pass
+		if self.start_screen_pass:
+			pass
+		else:
+			with change_dir('snd'):
+				pg.mixer.music.load('through space.ogg')
+			pg.mixer.music.set_volume(1.0)
+			pg.mixer.music.play(loops=-1)
+			#Add mobs to show
+			self.start_mobs = pg.sprite.Group()
+			self.start_enemy = StartMob(187, 471, 'mob', 100,  g)
+			self.start_benemy = StartMob(319, 471, 'Bmob', 50,  g)
+			#self.all_sprites.add(self.player)
+			self.start_mobs.add(self.start_enemy)
+			self.start_mobs.add(self.start_benemy)
+			#Game start screen
+			s = True
+			while s:
+				#start loop - events
+				for event in pg.event.get():#exit loop
+					if event.type == pg.QUIT:
+							self.game_on = False
+							s = False
+					elif event.type == pg.KEYDOWN:
+						if event.key == pg.K_1:
+							s = False
+						if event.key == pg.K_2:
+							pass #2 players
+					try:
+						if self.joystick.get_button(6):
+							s = False
+						if self.joystick.get_button(7):
+							pass #2 players
+					except AttributeError:
+						pass
+				self.start_mobs.update()
+				self.win.blit(self.start_background_scaled, self.background_rect)
+				self.start_mobs.draw(self.win)
+				pg.display.update()
 
 	def show_go_screen(self):
 		#Game over/continue screen
-		self.win.blit(self.background_scaled, self.background_rect)
-		self.draw_text(self.win, "Samroiyod game", 64, methods.SCREENWIDTH / 3, methods.SCREENHEIGHT / 4)
-		self.draw_text(self.win, 'Arrow keys to move, Space to fire', 22, methods.SCREENWIDTH /3, methods.SCREENHEIGHT / 2)
-		self.draw_text(self.win, 'Press Y to start', 18, methods.SCREENWIDTH / 3, methods.SCREENHEIGHT * 3/4)
+		self.win.blit(self.go_background_scaled, self.background_rect)
+		self.draw_text(surf=self.win, text=str(self.score), size=56, x=400, y=493, pos=1)
+		#self.draw_text(self.win, 'Arrow keys to move, Space to fire', 22, meth.SCREENWIDTH /3, meth.SCREENHEIGHT / 2)
+		#self.draw_text(self.win, 'Press Y to start', 18, meth.SCREENWIDTH / 2, meth.SCREENHEIGHT * 3/4)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
-			self.clock.tick(FPS)
+			self.clock.tick(meth.FPS)
 
 			for event in pg.event.get():#exit loop
 				if event.type == pg.QUIT:
 					self.waiting = False
-					g.game_on = False
+					self.game_on = False
 				if event.type == pg.KEYDOWN:
 					if event.key == pg.K_ESCAPE:
 						self.waiting = False
-						g.game_on = False
 				if event.type == pg.KEYUP:
 					if event.key == pg.K_y:
 						self.waiting = False
+						self.start_screen_pass = True
+				try:
+					if self.joystick.get_button(8):
+						self.waiting = False
+					if self.joystick.get_button(9):
+						self.waiting = False
+						self.start_screen_pass = True
+				except AttributeError:
+					pass
 
 			pg.display.update()
 
@@ -433,8 +489,10 @@ if __name__ == '__main__':
 	print("App version:",__version__)
 
 	g = Game()
-	g.show_start_screen()
 	while g.game_on:
+		g.show_start_screen()
+		if g.game_on == False:
+			break
 		g.new()
 		g.show_go_screen()
 
