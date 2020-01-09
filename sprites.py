@@ -388,4 +388,33 @@ class Explosion(pg.sprite.Sprite):
 				self.image = self.explosion_anim[self.size][self.frame]	
 			self.frame += 1
 
+
+class StartButtons(pg.sprite.Sprite):
+	"""docstring for StartButtons"""
+	def __init__(self, button_type, button_center, game):
+		pg.sprite.Sprite.__init__(self)
+		self.game = game
+		self.load_images()
+		self.button_type = button_type
+		self.button_center = button_center
+		self.image = self.buttons[self.button_type][0]
+		self.rect = self.image.get_rect()
+		self.rect.center = button_center
+
+
+	def load_images(self):
+		self.buttons = {1:[self.game.sprite_sheet.get_image(562, 858, 146, 41), self.game.sprite_sheet.get_image(402, 858, 157, 44)]
+		, 2:[self.game.sprite_sheet.get_image(562, 905, 146, 41), self.game.sprite_sheet.get_image(402, 905, 157, 44)]}
+
+	def update(self):
+		if self.game.number_of_players == 2 and self.button_type == 2:
+			self.image = self.buttons[self.button_type][1]
+		elif self.game.number_of_players > 0 and self.button_type == 1:
+			self.image = self.buttons[self.button_type][1]
+		else:
+			self.image = self.buttons[self.button_type][0]
+		self.rect = self.image.get_rect()
+		self.rect.center = self.button_center
+		
+
 			

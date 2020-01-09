@@ -30,7 +30,7 @@ import pygame as pg
 import methods as meth
 from methods import change_dir
 import sprites
-from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob
+from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
 
 class Game(object):
 	def __init__(self):
@@ -83,7 +83,10 @@ class Game(object):
 		self.start_background_scaled = pg.transform.scale(self.start_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
 		self.go_background_scaled = pg.transform.scale(self.go_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
 		self.background_rect = self.background_scaled.get_rect()
-
+		self.player_one_img = self.sprite_sheet.get_image(0, 965, 243, 45)
+		self.player_two_img = self.sprite_sheet.get_image(0, 1014, 243, 45)
+		self.press_start_img = self.sprite_sheet.get_image(248, 964, 379, 58)
+		self.press_start_img_rect = self.press_start_img.get_rect()
 
 		#Load all games sounds
 		with change_dir('snd'):
@@ -414,7 +417,8 @@ class Game(object):
 		if self.start_screen_pass:
 			pass
 		else:
-			with change_dir('snd'):
+			self.number_of_players = 0
+			with change_dir('snd'): #set music
 				pg.mixer.music.load('through space.ogg')
 			pg.mixer.music.set_volume(1.0)
 			pg.mixer.music.play(loops=-1)
@@ -422,9 +426,14 @@ class Game(object):
 			self.start_mobs = pg.sprite.Group()
 			self.start_enemy = StartMob(187, 471, 'mob', 100,  g)
 			self.start_benemy = StartMob(319, 471, 'Bmob', 50,  g)
-			#self.all_sprites.add(self.player)
+			#add button sprites
+			self.player_one_button = StartButtons(button_type=1, button_center=(314, 710), game=g)
+			self.player_two_button = StartButtons(button_type=2, button_center=(489, 710), game=g)
+			#add to group
 			self.start_mobs.add(self.start_enemy)
 			self.start_mobs.add(self.start_benemy)
+			self.start_mobs.add(self.player_one_button)
+			self.start_mobs.add(self.player_two_button)
 			#Game start screen
 			s = True
 			while s:
@@ -435,27 +444,59 @@ class Game(object):
 							s = False
 					elif event.type == pg.KEYDOWN:
 						if event.key == pg.K_1:
-							s = False
+							if self.number_of_players == 1:
+								self.number_of_players = 0
+							else:
+								self.number_of_players = 1
+								self.count = 0
 						if event.key == pg.K_2:
-							pass #2 players
+							if self.number_of_players == 2:
+								self.number_of_players = 1
+							else:
+								self.number_of_players = 2
+								self.count = 0
+						if event.key == pg.K_RETURN and self.number_of_players > 0:
+							s = False
 					try:
 						if self.joystick.get_button(6):
-							s = False
+							if self.number_of_players == 1:
+								self.number_of_players = 0
+							else:
+								self.number_of_players = 1
+								self.count = 0
 						if self.joystick.get_button(7):
-							pass #2 players
+							if self.number_of_players == 2:
+								self.number_of_players = 1
+							else:
+								self.number_of_players = 2
+								self.count = 0
+						if self.joystick.get_button(9) and self.number_of_players > 0:
+							s = False
 					except AttributeError:
 						pass
 				self.start_mobs.update()
 				self.win.blit(self.start_background_scaled, self.background_rect)
+				#draw player images
+				if self.number_of_players == 2:
+					self.win.blit(self.player_one_img, (46, 607))
+					self.win.blit(self.player_two_img, (506, 607))
+				if self.number_of_players == 1:
+					self.win.blit(self.player_one_img, (46, 607))
+				if self.number_of_players != 0:
+					if self.count <= 200:
+						self.win.blit(self.press_start_img, (meth.SCREENWIDTH / 2 - self.press_start_img_rect.width / 2, 330))
+					if self.count >= 400:
+						self.count = 0				
+					self.count += 1
+
 				self.start_mobs.draw(self.win)
 				pg.display.update()
 
 	def show_go_screen(self):
 		#Game over/continue screen
 		self.win.blit(self.go_background_scaled, self.background_rect)
+		#Draw score
 		self.draw_text(surf=self.win, text=str(self.score), size=56, x=400, y=493, pos=1)
-		#self.draw_text(self.win, 'Arrow keys to move, Space to fire', 22, meth.SCREENWIDTH /3, meth.SCREENHEIGHT / 2)
-		#self.draw_text(self.win, 'Press Y to start', 18, meth.SCREENWIDTH / 2, meth.SCREENHEIGHT * 3/4)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
 			self.clock.tick(meth.FPS)
@@ -465,16 +506,16 @@ class Game(object):
 					self.waiting = False
 					self.game_on = False
 				if event.type == pg.KEYDOWN:
-					if event.key == pg.K_ESCAPE:
+					if event.key == pg.K_ESCAPE: #Return to start screen
 						self.waiting = False
 				if event.type == pg.KEYUP:
-					if event.key == pg.K_y:
+					if event.key == pg.K_y: #Continue
 						self.waiting = False
 						self.start_screen_pass = True
 				try:
-					if self.joystick.get_button(8):
+					if self.joystick.get_button(8): #Select button to return to start screen
 						self.waiting = False
-					if self.joystick.get_button(9):
+					if self.joystick.get_button(9): #Play button to continue
 						self.waiting = False
 						self.start_screen_pass = True
 				except AttributeError:
