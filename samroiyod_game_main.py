@@ -30,7 +30,7 @@ import pygame as pg
 import methods as meth
 from methods import change_dir
 import sprites
-from sprites import Player, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
+from sprites import Player1, Player2, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
 
 class Game(object):
 	def __init__(self):
@@ -142,30 +142,15 @@ class Game(object):
 			self.boss_sound.fadeout(1500)
 			self.game_level += 1
 			#Player animation
-			self.player.player_level_up_anim()
-			return True		
-
-	# def play_mob_movesound(self):
-	# 	if len(self.mobs) + len(self.Bmobs) > 0 and self.player.alive():
-	# 		sound_delay = self.move_delay
-	# 		if sound_delay < 150:
-	# 			sound_delay = 150
-	# 		now = pg.time.get_ticks()
-	# 		if now - self.sound_last_update >= sound_delay:
-	# 			self.sound_last_update = now
-	# 			if self.sound:
-	# 				self.enemy_sounds[3].play()
-	# 				self.sound = False	
-	# 			else:
-	# 				self.enemy_sounds[0].play()	
-	# 				self.sound = True				
+			self.player1.player_level_up_anim()
+			return True						
 
 	def add_boss(self):
 		now = pg.time.get_ticks()
 		if now - self.boss_last_update >= self.rand_delay:
 			self.boss_last_update = now
 			self.rand_delay = random.randrange(4600,22000)
-			if len(self.bosses) < 1 and self.player.alive():
+			if len(self.bosses) < 1 and self.player1.alive():
 				self.boss = Boss(g)
 				self.all_sprites.add(self.boss)
 				self.bosses.add(self.boss)
@@ -207,24 +192,24 @@ class Game(object):
 				self.newmob(((i+1)*70)-15, ypos)
 
 	def powerup_collect(self):
-		hits = pg.sprite.spritecollide(self.player, self.powerups, True)
+		hits = pg.sprite.spritecollide(self.player1, self.powerups, True)
 		for hit in hits:
 			if hit.image == self.powerup.powerup_images['norm'][0]: #increase the guns	
 				self.powerup_sounds[0].play()
-				self.player.powerup()
+				self.player1.powerup()
 
 			if hit.image == self.powerup.powerup_images['norm'][1]: #increase the shields
 				self.powerup_sounds[1].play()
-				if self.player.shield < 100:
-					self.player.shield += random.randrange(10, 40)
-					if self.player.shield > 100:
-						self.player.shield = 100
+				if self.player1.shield < 100:
+					self.player1.shield += random.randrange(10, 40)
+					if self.player1.shield > 100:
+						self.player1.shield = 100
 
 			if hit.image == self.powerup.powerup_images['boss'][0]:
 				#give an extra life if lives are less than three
 				self.powerup_sounds[2].play()
-				if self.player.lives < 3:
-					self.player.lives += 1
+				if self.player1.lives < 3:
+					self.player1.lives += 1
 
 			if hit.image == self.powerup.powerup_images['boss'][1]:
 				#starts the bonus level
@@ -263,11 +248,11 @@ class Game(object):
 		self.enemy_sounds[3].stop()
 		self.death_explosion.play()
 		self.boss_sound.fadeout(2000)
-		self.player.kill()
+		self.player1.kill()
 
 	def draw_lives(self, surf, x, y):
-		self.player_image_resized = pg.transform.scale(self.player.image, (20, 20))
-		for i in range (self.player.lives):
+		self.player_image_resized = pg.transform.scale(self.player1  .image, (20, 20))
+		for i in range (self.player1.lives):
 			surf.blit(self.player_image_resized, (x + (i * 25), y))
 
 	def update_enemy_speed(self):
@@ -295,6 +280,7 @@ class Game(object):
 	def new(self):
 		#Start a new game
 		self.score=0
+		self.start_screen_pass = False
 		self.all_sprites = pg.sprite.Group()
 		self.bullets = pg.sprite.Group()
 		self.mob_bullets = pg.sprite.Group()
@@ -302,9 +288,15 @@ class Game(object):
 		self.Bmobs = pg.sprite.Group()
 		self.bosses = pg.sprite.Group()
 		self.powerups = pg.sprite.Group()
-		self.player = Player(g)
-		self.all_sprites.add(self.player)
-		self.start_screen_pass = False
+		#choose 1 or 2 players
+		if self.number_of_players == 2:
+			self.player1 = Player1(xpos=meth.SCREENWIDTH / 3, game=g)
+			self.all_sprites.add(self.player1)
+			self.player2 = Player2(xpos=(meth.SCREENWIDTH / 3)*2, game=g)
+			self.all_sprites.add(self.player2)
+		else:
+			self.player1 = Player1(xpos=meth.SCREENWIDTH / 2, game=g)
+			self.all_sprites.add(self.player1)	
 
 		self.add_mobs()
 		
@@ -349,31 +341,31 @@ class Game(object):
 			self.player.rect.bottom = meth.SCREENHEIGHT - 6
 
 		#Check to see if a bullet has hit the player
-		hits = pg.sprite.spritecollide(self.player, self.mob_bullets, True)
+		hits = pg.sprite.spritecollide(self.player1, self.mob_bullets, True)
 		for hit in hits:
-			self.player.shield -= random.randrange(10,30)
+			self.player1.shield -= random.randrange(10,30)
 			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
 			self.all_sprites.add(self.expl)
 
-			if self.player.shield <= 0:
-				self.player.lives -= 1
+			if self.player1.shield <= 0:
+				self.player1.lives -= 1
 				#move the player off the screen
-				self.player.hide()
+				self.player1.hide()
 				
-				if self.player.lives <= 0:
+				if self.player1.lives <= 0:
 					self.player_death(hit.rect.center)
-				self.player.shield = 100
+				self.player1.shield = 100
 
-		if not self.player.alive() and not self.expl.alive():			
+		if not self.player1.alive() and not self.expl.alive():			
 			self.playing = False
 
 		#Check to see if a mob has hit the player
-		hits = pg.sprite.spritecollide(self.player, self.mobs, True) + pg.sprite.spritecollide(self.player, self.Bmobs, True)
+		hits = pg.sprite.spritecollide(self.player1, self.mobs, True) + pg.sprite.spritecollide(self.player1, self.Bmobs, True)
 		for hit in hits:
 			self.player_death(hit.rect.center)
-			self.player.shield = 0
-			self.player.lives = 0
-			self.player.hide()
+			self.player1.shield = 0
+			self.player1.lives = 0
+			self.player1.hide()
 			if not self.expl.alive():
 				self.playing = False
 			
@@ -408,7 +400,7 @@ class Game(object):
 		#Game loop - draw
 		self.win.blit(self.background_scaled, self.background_rect)	
 		self.draw_text(surf=self.win, text=str(self.score), size=22, x=112, y=2, pos=0)
-		self.draw_shields(self.win, 166, 8, self.player.shield)
+		self.draw_shields(self.win, 166, 8, self.player1.shield)
 		self.draw_lives(self.win, 278, 3)
 		self.all_sprites.draw(self.win)
 		pg.display.update()
@@ -457,6 +449,7 @@ class Game(object):
 								self.count = 0
 						if event.key == pg.K_RETURN and self.number_of_players > 0:
 							s = False
+							self.start_mobs.empty()
 					try:
 						if self.joystick.get_button(6):
 							if self.number_of_players == 1:
@@ -472,6 +465,7 @@ class Game(object):
 								self.count = 0
 						if self.joystick.get_button(9) and self.number_of_players > 0:
 							s = False
+							self.start_mobs.empty()
 					except AttributeError:
 						pass
 				self.start_mobs.update()
@@ -482,7 +476,7 @@ class Game(object):
 					self.win.blit(self.player_two_img, (506, 607))
 				if self.number_of_players == 1:
 					self.win.blit(self.player_one_img, (46, 607))
-				if self.number_of_players != 0:
+				if self.number_of_players != 0: #draw press start text
 					if self.count <= 200:
 						self.win.blit(self.press_start_img, (meth.SCREENWIDTH / 2 - self.press_start_img_rect.width / 2, 330))
 					if self.count >= 400:

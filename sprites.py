@@ -13,13 +13,13 @@ class Spritesheet:
 		image.blit(self.spritesheet, (0,0), (x, y, width, height))
 		return image
  
-class Player(pg.sprite.Sprite):
-	def __init__(self, game):
+class Player1(pg.sprite.Sprite):
+	def __init__(self, xpos , game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.image = self.game.sprite_sheet.get_image(354 , 256, 64, 64)
+		self.image = self.game.sprite_sheet.get_image(354, 256, 64, 64)
 		self.rect = self.image.get_rect()
-		self.rect.centerx = meth.SCREENWIDTH / 2
+		self.rect.centerx = xpos
 		self.rect.bottom = meth.SCREENHEIGHT - 6
 		self.speedx = 1
 		self.shoot_delay = 750
@@ -46,11 +46,11 @@ class Player(pg.sprite.Sprite):
 		self.speedx = 0
 
 		keystate = pg.key.get_pressed()
-		if keystate[pg.K_LEFT]:
+		if keystate[pg.K_a]:
 			self.speedx = -5
-		if keystate[pg.K_RIGHT]:
+		if keystate[pg.K_s]:
 			self.speedx = 5
-		if keystate[pg.K_SPACE]:
+		if keystate[pg.K_f]:
 			self.shoot()
 		try:
 			if self.game.joystick.get_axis(0) == -1:
@@ -115,6 +115,37 @@ class Player(pg.sprite.Sprite):
 			if self.rect.centerx == meth.SCREENWIDTH/2 and self.rect.top == meth.SCREENHEIGHT/2:
 				break	
 			self.game.draw()
+
+class Player2(Player1):
+	"""docstring for Player2"""
+	def __init__(self, xpos , game):
+		super(Player2, self).__init__(xpos , game)
+		self.image = self.game.sprite_sheet.get_image(408, 344, 64, 64)
+
+	def update(self):
+		self.speedx = 0
+		keystate = pg.key.get_pressed()
+		if keystate[pg.K_LEFT]:
+			self.speedx = -5
+		if keystate[pg.K_RIGHT]:
+			self.speedx = 5
+		if keystate[pg.K_KP0]:
+			self.shoot()
+		# try:
+		# 	if self.game.joystick.get_axis(0) == -1:
+		# 		self.speedx = -5
+		# 	if self.game.joystick.get_axis(0) > 0:
+		# 		self.speedx = 5
+		# 	if self.game.joystick.get_button(0):
+		# 		self.shoot()
+		# except AttributeError:
+		# 	pass
+
+		self.rect.x += self.speedx
+		if self.rect.right > meth.SCREENWIDTH:
+			self.rect.right = meth.SCREENWIDTH
+		if self.rect.left < 0:
+			self.rect.left = 0		
 
 class Bullet(pg.sprite.Sprite):
 	def __init__(self, x ,y, game):
@@ -227,7 +258,7 @@ class Mob(pg.sprite.Sprite):
 				self.rect.x -= self.game.speedx
 
 			#Spawn a bullet
-			if self.game.player.alive():
+			if self.game.player1.alive():
 				if random.random() >= 0.98:
 					self.shoot()
 
