@@ -51,7 +51,7 @@ class Player1(pg.sprite.Sprite):
 		if keystate[pg.K_s]:
 			self.speedx = 5
 		if keystate[pg.K_f]:
-			self.shoot()
+			self.shoot(player=1)
 		try:
 			if self.game.joystick.get_axis(0) == -1:
 				self.speedx = -5
@@ -72,23 +72,25 @@ class Player1(pg.sprite.Sprite):
 		self.power_level += 1
 		self.power_time = pg.time.get_ticks()
 
-	def shoot(self):
+	def shoot(self, player):
 		now = pg.time.get_ticks()
 		if now - self.last_shot > self.shoot_delay:
 			self.last_shot = now
-			bullet_list = [Bullet(self.rect.centerx, self.rect.top, self.game),Bullet(self.rect.left + 11, self.rect.centery, self.game),Bullet(self.rect.right - 10, self.rect.centery, self.game)]
+			if player == 2:
+				self.bullet_list = [Player2Bullet(self.rect.centerx, self.rect.top, self.game),Player2Bullet(self.rect.left + 11, self.rect.centery, self.game),Player2Bullet(self.rect.right - 10, self.rect.centery, self.game)]
+			else:
+				self.bullet_list = [Player1Bullet(self.rect.centerx, self.rect.top, self.game),Player1Bullet(self.rect.left + 11, self.rect.centery, self.game),Player1Bullet(self.rect.right - 10, self.rect.centery, self.game)]
 			if self.power_level >= 3:
-				for bul in bullet_list:
+				for bul in self.bullet_list:
 					self.game.all_sprites.add(bul)
 					self.game.bullets.add(bul)
 			elif self.power_level == 2:
-				for bul in bullet_list[1:3]:
+				for bul in self.bullet_list[1:3]:
 					self.game.all_sprites.add(bul)
 					self.game.bullets.add(bul)
 			else:
-				bullet = Bullet(self.rect.centerx, self.rect.top, self.game)
-				self.game.all_sprites.add(bullet_list[0])
-				self.game.bullets.add(bullet_list[0])
+				self.game.all_sprites.add(self.bullet_list[0])
+				self.game.bullets.add(self.bullet_list[0])
 			self.game.shoot_sound.play()
 
 	def hide(self):
@@ -130,7 +132,7 @@ class Player2(Player1):
 		if keystate[pg.K_RIGHT]:
 			self.speedx = 5
 		if keystate[pg.K_KP0]:
-			self.shoot()
+			self.shoot(2)
 		# try:
 		# 	if self.game.joystick.get_axis(0) == -1:
 		# 		self.speedx = -5
@@ -147,7 +149,7 @@ class Player2(Player1):
 		if self.rect.left < 0:
 			self.rect.left = 0		
 
-class Bullet(pg.sprite.Sprite):
+class Player1Bullet(pg.sprite.Sprite):
 	def __init__(self, x ,y, game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
@@ -162,7 +164,14 @@ class Bullet(pg.sprite.Sprite):
 		if self.rect.bottom < 0:
 			self.kill()
 
-class MobBullet(Bullet):
+class Player2Bullet(Player1Bullet):
+	"""docstring for Player2Bullet"""
+	def __init__(self, x ,y, game):
+		super(Player2Bullet, self).__init__(x ,y, game)
+		self.image = self.game.sprite_sheet.get_image(358, 321, 10, 12)
+		
+
+class MobBullet(Player1Bullet):
 	"""Inherant class"""
 	def __init__(self, x, y, game):
 		super().__init__(x, y, game)

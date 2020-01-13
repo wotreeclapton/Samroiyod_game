@@ -30,7 +30,7 @@ import pygame as pg
 import methods as meth
 from methods import change_dir
 import sprites
-from sprites import Player1, Player2, Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
+from sprites import Player1, Player2, Player1Bullet, Player2Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
 
 class Game(object):
 	def __init__(self):
@@ -159,7 +159,7 @@ class Game(object):
 	def enemy_hit(self, enemy, score_amm, check_group_type):
 		hits = pg.sprite.groupcollide(enemy, self.bullets, True, True)
 		for hit in hits:
-			self.score += score_amm
+			self.p1score += score_amm
 			if check_group_type: #Bool value for checking the right group
 				self.boss_sound.stop()
 				random.choice(self.expl_sounds).play()
@@ -177,7 +177,7 @@ class Game(object):
 				self.expl = Explosion(hit.rect.center, 'lg', 24, g)
 			self.all_sprites.add(self.expl)		
 
-		return(self.score)
+		return(self.p1score)
 	
 	def add_mobs(self):
 		Bmobs_y_list = [100, 166]
@@ -250,9 +250,9 @@ class Game(object):
 		self.boss_sound.fadeout(2000)
 		self.player1.kill()
 
-	def draw_lives(self, surf, x, y):
-		self.player_image_resized = pg.transform.scale(self.player1  .image, (20, 20))
-		for i in range (self.player1.lives):
+	def draw_lives(self, surf, x, y, player):
+		self.player_image_resized = pg.transform.scale(player.image, (20, 20))
+		for i in range (player.lives):
 			surf.blit(self.player_image_resized, (x + (i * 25), y))
 
 	def update_enemy_speed(self):
@@ -279,7 +279,6 @@ class Game(object):
 
 	def new(self):
 		#Start a new game
-		self.score=0
 		self.start_screen_pass = False
 		self.all_sprites = pg.sprite.Group()
 		self.bullets = pg.sprite.Group()
@@ -290,13 +289,12 @@ class Game(object):
 		self.powerups = pg.sprite.Group()
 		#choose 1 or 2 players
 		if self.number_of_players == 2:
-			self.player1 = Player1(xpos=meth.SCREENWIDTH / 3, game=g)
-			self.all_sprites.add(self.player1)
+			self.p2score=0
 			self.player2 = Player2(xpos=(meth.SCREENWIDTH / 3)*2, game=g)
 			self.all_sprites.add(self.player2)
-		else:
-			self.player1 = Player1(xpos=meth.SCREENWIDTH / 2, game=g)
-			self.all_sprites.add(self.player1)	
+		self.p1score=0
+		self.player1 = Player1(xpos=meth.SCREENWIDTH / 2, game=g)
+		self.all_sprites.add(self.player1)	
 
 		self.add_mobs()
 		
@@ -398,10 +396,14 @@ class Game(object):
 
 	def draw(self):
 		#Game loop - draw
-		self.win.blit(self.background_scaled, self.background_rect)	
-		self.draw_text(surf=self.win, text=str(self.score), size=22, x=112, y=2, pos=0)
-		self.draw_shields(self.win, 166, 8, self.player1.shield)
-		self.draw_lives(self.win, 278, 3)
+		self.win.blit(self.background_scaled, self.background_rect)		
+		if self.number_of_players == 2:
+			self.draw_text(surf=self.win, text=str(self.p2score), size=22, x=566, y=2, pos=0)
+			self.draw_shields(surf=self.win, x=608, y=8, shield_amm=self.player2.shield)
+			self.draw_lives(surf=self.win, x=720, y=3, player=self.player2)
+		self.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
+		self.draw_shields(surf=self.win, x=166, y=8, shield_amm=self.player1.shield)
+		self.draw_lives(surf=self.win, x=278, y=3, player=self.player1)
 		self.all_sprites.draw(self.win)
 		pg.display.update()
 
