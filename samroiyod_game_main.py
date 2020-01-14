@@ -136,13 +136,18 @@ class Game(object):
 
 	def level_check(self):
 		if len(self.mobs) + len(self.Bmobs) <= 0 and not self.expl.alive():
-			self.bullets.empty()
+			self.player1_bullets.empty()
+			self.player2_bullets.empty()
 			self.mob_bullets.empty()
 			self.boss.kill()
 			self.boss_sound.fadeout(1500)
 			self.game_level += 1
 			#Player animation
-			self.player1.player_level_up_anim()
+			if self.number_of_players == 2:
+				if self.player2.alive():
+					self.player2.level_up_anim()
+			if self.player1.alive():
+				self.player1.level_up_anim()
 			return True						
 
 	def add_boss(self):
@@ -156,10 +161,13 @@ class Game(object):
 				self.bosses.add(self.boss)
 				self.boss_sound.play(-1)	 
 
-	def enemy_hit(self, enemy, score_amm, check_group_type):
-		hits = pg.sprite.groupcollide(enemy, self.bullets, True, True)
+	def enemy_hit(self, enemy, score_amm, bulletlist, check_group_type):
+		hits = pg.sprite.groupcollide(enemy, bulletlist, True, True)
 		for hit in hits:
-			self.p1score += score_amm
+			if bulletlist == self.player2_bullets:
+				self.p2score += score_amm
+			else:
+				self.p1score += score_amm
 			if check_group_type: #Bool value for checking the right group
 				self.boss_sound.stop()
 				random.choice(self.expl_sounds).play()
@@ -177,7 +185,7 @@ class Game(object):
 				self.expl = Explosion(hit.rect.center, 'lg', 24, g)
 			self.all_sprites.add(self.expl)		
 
-		return(self.p1score)
+		#return(self.p1score)
 	
 	def add_mobs(self):
 		Bmobs_y_list = [100, 166]
@@ -191,25 +199,25 @@ class Game(object):
 			for i in range (10):
 				self.newmob(((i+1)*70)-15, ypos)
 
-	def powerup_collect(self):
-		hits = pg.sprite.spritecollide(self.player1, self.powerups, True)
+	def powerup_collect(self, player):
+		hits = pg.sprite.spritecollide(player, self.powerups, True)
 		for hit in hits:
 			if hit.image == self.powerup.powerup_images['norm'][0]: #increase the guns	
 				self.powerup_sounds[0].play()
-				self.player1.powerup()
+				player.powerup()
 
 			if hit.image == self.powerup.powerup_images['norm'][1]: #increase the shields
 				self.powerup_sounds[1].play()
-				if self.player1.shield < 100:
-					self.player1.shield += random.randrange(10, 40)
-					if self.player1.shield > 100:
-						self.player1.shield = 100
+				if player.shield < 100:
+					player.shield += random.randrange(10, 40)
+					if player.shield > 100:
+						player.shield = 100
 
 			if hit.image == self.powerup.powerup_images['boss'][0]:
 				#give an extra life if lives are less than three
 				self.powerup_sounds[2].play()
-				if self.player1.lives < 3:
-					self.player1.lives += 1
+				if player.lives < 3:
+					player.lives += 1
 
 			if hit.image == self.powerup.powerup_images['boss'][1]:
 				#starts the bonus level
@@ -237,19 +245,23 @@ class Game(object):
 		pg.draw.rect(surf, meth.GREEN, self.fill_rect)
 		pg.draw.rect(surf, meth.WHITE, self.outline_rect, 1)
 
-	def player_death(self, hit):
+	def player_death(self, hit, player):
 		self.expl = Explosion(hit, 'boss', 100, g)
 		self.all_sprites.add(self.expl)
-		#removes all the bullets after player death
-		for bullet in self.mob_bullets.sprites():
-			bullet.kill()
-		pg.mixer.music.fadeout(2000)
-		self.enemy_sounds[0].stop()
-		self.enemy_sounds[3].stop()
-		self.death_explosion.play()
-		self.boss_sound.fadeout(2000)
-		self.player1.kill()
-
+		if len(self.player_group) == 2:
+			#check to see if both player are dead
+			player.kill()
+		else:
+			#removes all the bullets after player death
+			for bullet in self.mob_bullets.sprites():
+				bullet.kill()
+			pg.mixer.music.fadeout(2000)
+			self.enemy_sounds[0].stop()
+			self.enemy_sounds[3].stop()
+			self.death_explosion.play()
+			self.boss_sound.fadeout(2000)
+			player.kill()
+		
 	def draw_lives(self, surf, x, y, player):
 		self.player_image_resized = pg.transform.scale(player.image, (20, 20))
 		for i in range (player.lives):
@@ -277,11 +289,41 @@ class Game(object):
 			self.speedx = 6
 			self.movey =14
 
+	def player_hit(self, player):
+		#Check to see if a bullet has hit the player
+		hits = pg.sprite.spritecollide(player, self.mob_bullets, True)
+		for hit in hits:
+			player.shield -= random.randrange(10,30)
+			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
+			self.all_sprites.add(self.expl)
+
+			if player.shield <= 0:
+				player.lives -= 1
+				#move the player off the screen
+				player.hide()
+				
+				if player.lives <= 0:
+					self.player_death(hit=hit.rect.center, player=player)
+				player.shield = 100
+
+	def player_hit_by_mob(self, player):
+		#Check to see if a mob has hit the player
+		hits = pg.sprite.spritecollide(player, self.mobs, True) + pg.sprite.spritecollide(player, self.Bmobs, True)
+		for hit in hits:
+			self.player_death(hit=hit.rect.center, player=player)
+			player.shield = 0
+			player.lives = 0
+			player.hide()
+			if not self.expl.alive():
+				self.playing = False
+
 	def new(self):
 		#Start a new game
 		self.start_screen_pass = False
 		self.all_sprites = pg.sprite.Group()
-		self.bullets = pg.sprite.Group()
+		self.player_group = pg.sprite.Group()
+		self.player1_bullets = pg.sprite.Group()
+		self.player2_bullets = pg.sprite.Group()
 		self.mob_bullets = pg.sprite.Group()
 		self.mobs = pg.sprite.Group()
 		self.Bmobs = pg.sprite.Group()
@@ -291,11 +333,12 @@ class Game(object):
 		if self.number_of_players == 2:
 			self.p2score=0
 			self.player2 = Player2(xpos=(meth.SCREENWIDTH / 3)*2, game=g)
+			self.player_group.add(self.player2)
 			self.all_sprites.add(self.player2)
 		self.p1score=0
 		self.player1 = Player1(xpos=meth.SCREENWIDTH / 2, game=g)
+		self.player_group.add(self.player1)
 		self.all_sprites.add(self.player1)	
-
 		self.add_mobs()
 		
 		self.waiting = True
@@ -325,9 +368,14 @@ class Game(object):
 		self.add_boss()
 
 		#Check to see if a bullet hit a mob
-		self.score = self.enemy_hit(self.mobs, 10, False)	
-		self.score = self.enemy_hit(self.Bmobs, 30, False)
-		self.score = self.enemy_hit(self.bosses, 100, True)
+		if self.number_of_players == 2:
+			self.enemy_hit(enemy=self.mobs, score_amm=10, bulletlist=self.player2_bullets, check_group_type=False)
+			self.enemy_hit(enemy=self.Bmobs, score_amm=30, bulletlist=self.player2_bullets, check_group_type=False)
+			self.enemy_hit(enemy=self.bosses, score_amm=100, bulletlist=self.player2_bullets, check_group_type=True)
+
+		self.enemy_hit(enemy=self.mobs, score_amm=10, bulletlist=self.player1_bullets, check_group_type=False)		
+		self.enemy_hit(enemy=self.Bmobs, score_amm=30, bulletlist=self.player1_bullets, check_group_type=False)
+		self.enemy_hit(enemy=self.bosses, score_amm=100, bulletlist=self.player1_bullets, check_group_type=True)
 
 		#Check if player has killed all the mobs
 		if self.level_check():
@@ -336,39 +384,26 @@ class Game(object):
 			self.speedx = 5
 			self.mob_direction = True
 			self.add_mobs()
-			self.player.rect.bottom = meth.SCREENHEIGHT - 6
+			#check what players are alive maybe loop it
+			self.player1.rect.bottom = meth.SCREENHEIGHT - 6
 
-		#Check to see if a bullet has hit the player
-		hits = pg.sprite.spritecollide(self.player1, self.mob_bullets, True)
-		for hit in hits:
-			self.player1.shield -= random.randrange(10,30)
-			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
-			self.all_sprites.add(self.expl)
+		#Check to see if a mob bullet has hit either player
+		if self.number_of_players == 2:
+			self.player_hit(player=self.player2)
+		self.player_hit(player=self.player1)
 
-			if self.player1.shield <= 0:
-				self.player1.lives -= 1
-				#move the player off the screen
-				self.player1.hide()
-				
-				if self.player1.lives <= 0:
-					self.player_death(hit.rect.center)
-				self.player1.shield = 100
-
-		if not self.player1.alive() and not self.expl.alive():			
+		if len(self.player_group) == 0 and not self.expl.alive():			
 			self.playing = False
+		
+		#Check to see if a mob has hit either player	
+		if self.number_of_players == 2:
+			self.player_hit_by_mob(self.player2)
+		self.player_hit_by_mob(self.player1)
 
-		#Check to see if a mob has hit the player
-		hits = pg.sprite.spritecollide(self.player1, self.mobs, True) + pg.sprite.spritecollide(self.player1, self.Bmobs, True)
-		for hit in hits:
-			self.player_death(hit.rect.center)
-			self.player1.shield = 0
-			self.player1.lives = 0
-			self.player1.hide()
-			if not self.expl.alive():
-				self.playing = False
-			
 		#Check to see if the player has hit a powerup
-		self.powerup_collect()
+		if self.number_of_players == 2:
+			self.powerup_collect(self.player2)
+		self.powerup_collect(self.player1)
 
 		#Check if enemies have hit the walls and update movement
 		now = pg.time.get_ticks()
@@ -392,7 +427,15 @@ class Game(object):
 					if self.playing:
 						self.playing = False
 					self.game_on = False
-					self.waiting = False	
+					self.waiting = False
+			try:
+				if self.joystick.get_button(8):
+					if self.playing:
+						self.playing = False
+					self.game_on = False
+					self.waiting = False
+			except AttributeError:
+				pass	
 
 	def draw(self):
 		#Game loop - draw
@@ -492,7 +535,9 @@ class Game(object):
 		#Game over/continue screen
 		self.win.blit(self.go_background_scaled, self.background_rect)
 		#Draw score
-		self.draw_text(surf=self.win, text=str(self.score), size=56, x=400, y=493, pos=1)
+		if self.number_of_players == 2:
+			self.draw_text(surf=self.win, text="Player 2: {}".format(str(self.p2score)), size=38, x=400, y=535, pos=1)
+		self.draw_text(surf=self.win, text="Player 1: {}".format(str(self.p1score)), size=38, x=400, y=471, pos=1)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
 			self.clock.tick(meth.FPS)

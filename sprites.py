@@ -51,14 +51,14 @@ class Player1(pg.sprite.Sprite):
 		if keystate[pg.K_s]:
 			self.speedx = 5
 		if keystate[pg.K_f]:
-			self.shoot(player=1)
+			self.shoot(player_bull_list=self.game.player1_bullets)
 		try:
 			if self.game.joystick.get_axis(0) == -1:
 				self.speedx = -5
 			if self.game.joystick.get_axis(0) > 0:
 				self.speedx = 5
 			if self.game.joystick.get_button(0):
-				self.shoot()
+				self.shoot(player_bull_list=self.game.player1_bullets)
 		except AttributeError:
 			pass
 
@@ -72,25 +72,25 @@ class Player1(pg.sprite.Sprite):
 		self.power_level += 1
 		self.power_time = pg.time.get_ticks()
 
-	def shoot(self, player):
+	def shoot(self, player_bull_list):
 		now = pg.time.get_ticks()
 		if now - self.last_shot > self.shoot_delay:
 			self.last_shot = now
-			if player == 2:
+			if player_bull_list == self.game.player2_bullets:
 				self.bullet_list = [Player2Bullet(self.rect.centerx, self.rect.top, self.game),Player2Bullet(self.rect.left + 11, self.rect.centery, self.game),Player2Bullet(self.rect.right - 10, self.rect.centery, self.game)]
 			else:
 				self.bullet_list = [Player1Bullet(self.rect.centerx, self.rect.top, self.game),Player1Bullet(self.rect.left + 11, self.rect.centery, self.game),Player1Bullet(self.rect.right - 10, self.rect.centery, self.game)]
 			if self.power_level >= 3:
 				for bul in self.bullet_list:
 					self.game.all_sprites.add(bul)
-					self.game.bullets.add(bul)
+					player_bull_list.add(bul)
 			elif self.power_level == 2:
 				for bul in self.bullet_list[1:3]:
 					self.game.all_sprites.add(bul)
-					self.game.bullets.add(bul)
+					player_bull_list.add(bul)
 			else:
 				self.game.all_sprites.add(self.bullet_list[0])
-				self.game.bullets.add(self.bullet_list[0])
+				player_bull_list.add(self.bullet_list[0])
 			self.game.shoot_sound.play()
 
 	def hide(self):
@@ -98,17 +98,17 @@ class Player1(pg.sprite.Sprite):
 		self.hide_timer = pg.time.get_ticks()
 		self.rect.center = (meth.SCREENWIDTH / 2, meth.SCREENHEIGHT + 200)
 
-	def player_level_up_anim(self):
+	def level_up_anim(self):
 		#move player 1 px every frame
 		while True:
-			self.game.clock.tick(140)
+			self.game.clock.tick(120)
 			if self.rect.centerx < meth.SCREENWIDTH / 2:
 				self.rect.centerx += 1
 			elif self.rect.centerx > meth.SCREENWIDTH / 2:
 				self.rect.centerx -= 1
 			elif self.rect.centerx == meth.SCREENWIDTH/2:
 				while True:
-					self.game.clock.tick(160)
+					self.game.clock.tick(140)
 					if self.rect.top > meth.SCREENHEIGHT/2:
 						self.rect.top -= 1
 					else:
@@ -132,7 +132,7 @@ class Player2(Player1):
 		if keystate[pg.K_RIGHT]:
 			self.speedx = 5
 		if keystate[pg.K_KP0]:
-			self.shoot(2)
+			self.shoot(player_bull_list=self.game.player2_bullets)
 		# try:
 		# 	if self.game.joystick.get_axis(0) == -1:
 		# 		self.speedx = -5
