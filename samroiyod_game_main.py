@@ -87,6 +87,8 @@ class Game(object):
 		self.player_two_img = self.sprite_sheet.get_image(0, 1014, 243, 45)
 		self.press_start_img = self.sprite_sheet.get_image(248, 964, 379, 58)
 		self.press_start_img_rect = self.press_start_img.get_rect()
+		self.paused_img = self.sprite_sheet.get_image(640, 964, 207, 57)
+		self.paused_img_rect = self.paused_img.get_rect()
 
 		#Load all games sounds
 		with change_dir('snd'):
@@ -190,13 +192,13 @@ class Game(object):
 	def add_mobs(self):
 		Bmobs_y_list = [100, 166]
 		for ypos in Bmobs_y_list:
-			for i in range(10):
+			for i in range(1):
 				self.bigenemy = Mob(((i+1)*70)-15, ypos, 'Bmob', 50,  g)
 				self.all_sprites.add(self.bigenemy)
 				self.Bmobs.add(self.bigenemy)
 		mob_y_list = [227, 297, 367]
 		for ypos in mob_y_list:
-			for i in range (10):
+			for i in range (1):
 				self.newmob(((i+1)*70)-15, ypos)
 
 	def powerup_collect(self, player):
@@ -317,6 +319,30 @@ class Game(object):
 			if not self.expl.alive():
 				self.playing = False
 
+	def pause(self):
+		count = 0
+		pause = True
+		while pause:
+			self.win.blit(self.background_scaled, self.background_rect)
+			#display pause writing
+			if count <= 200:
+				self.win.blit(self.paused_img, (meth.SCREENWIDTH / 2 - self.paused_img_rect.width / 2, meth.SCREENHEIGHT / 2))
+				#self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=meth.SCREENHEIGHT / 2, pos=1)
+			if count >= 400:
+				count = 0				
+			count += 1
+			pg.display.update()
+			#unpause
+			for event in pg.event.get():
+				if event.type == pg.KEYDOWN:
+					if event.key == pg.K_p:
+						pause = False
+				try:
+					if self.joystick.get_button(9):
+						pause = False
+				except AttributeError:
+					pass
+
 	def new(self):
 		#Start a new game
 		self.start_screen_pass = False
@@ -428,12 +454,17 @@ class Game(object):
 						self.playing = False
 					self.game_on = False
 					self.waiting = False
+				if event.key == pg.K_p:
+					self.pause()
 			try:
 				if self.joystick.get_button(8):
 					if self.playing:
 						self.playing = False
 					self.game_on = False
 					self.waiting = False
+				if self.joystick.get_button(9):
+					#pause and unpause
+					self.pause()
 			except AttributeError:
 				pass	
 
@@ -568,7 +599,7 @@ print(sys.executable)
 
 if __name__ == '__main__':
 	print("Author:", __author__)
-	print("App version:",__version__)
+	print("App version:", __version__)
 
 	g = Game()
 	while g.game_on:
