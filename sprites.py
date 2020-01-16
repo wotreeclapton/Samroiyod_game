@@ -1,4 +1,11 @@
-#Sprite classes for Samroiyod game import pygame as pg
+#! python 3
+'''
+SAMROIYOD GAME SPRITES developed by Mr Steven J walden
+    Nov. 2020
+    SAMROIYOD, PRACHUAP KIRI KHAN, THAILAND
+[See License.txt file]
+'''
+
 import random
 import pygame as pg
 import methods as meth
@@ -12,7 +19,7 @@ class Spritesheet:
 		image = pg.Surface((width, height), pg.SRCALPHA)
 		image.blit(self.spritesheet, (0,0), (x, y, width, height))
 		return image
- 
+
 class Player1(pg.sprite.Sprite):
 	def __init__(self, xpos , game):
 		pg.sprite.Sprite.__init__(self)
@@ -98,31 +105,23 @@ class Player1(pg.sprite.Sprite):
 		self.hide_timer = pg.time.get_ticks()
 		self.rect.center = (meth.SCREENWIDTH / 2, meth.SCREENHEIGHT + 200)
 
-	def level_up_anim(self):
-		#move player 1 px every frame
-		while True:
-			self.game.clock.tick(120)
-			if self.rect.centerx < meth.SCREENWIDTH / 2:
-				self.rect.centerx += 1
-			elif self.rect.centerx > meth.SCREENWIDTH / 2:
-				self.rect.centerx -= 1
-			elif self.rect.centerx == meth.SCREENWIDTH/2:
-				while True:
-					self.game.clock.tick(140)
-					if self.rect.top > meth.SCREENHEIGHT/2:
-						self.rect.top -= 1
-					else:
-						break
-					self.game.draw()
-			if self.rect.centerx == meth.SCREENWIDTH/2 and self.rect.top == meth.SCREENHEIGHT/2:
-				break	
-			self.game.draw()
+	def move_to_center_anim(self, xpos):
+		#move the player to the middle x
+		if self.rect.centerx < xpos:
+			self.rect.centerx += 1
+		elif self.rect.centerx > xpos:
+			self.rect.centerx -= 1
+
+	def blastoff_anim(self):
+		#Move the player half way up the screen
+		if self.rect.top > meth.SCREENHEIGHT/2:
+			self.rect.top -= 1
 
 class Player2(Player1):
 	"""docstring for Player2"""
 	def __init__(self, xpos , game):
 		super(Player2, self).__init__(xpos , game)
-		self.image = self.game.sprite_sheet.get_image(408, 344, 64, 64)
+		self.image = self.game.sprite_sheet.get_image(408, 339, 64, 64)
 
 	def update(self):
 		self.speedx = 0
@@ -147,7 +146,7 @@ class Player2(Player1):
 		if self.rect.right > meth.SCREENWIDTH:
 			self.rect.right = meth.SCREENWIDTH
 		if self.rect.left < 0:
-			self.rect.left = 0		
+			self.rect.left = 0
 
 class Player1Bullet(pg.sprite.Sprite):
 	def __init__(self, x ,y, game):
@@ -169,7 +168,6 @@ class Player2Bullet(Player1Bullet):
 	def __init__(self, x ,y, game):
 		super(Player2Bullet, self).__init__(x ,y, game)
 		self.image = self.game.sprite_sheet.get_image(358, 321, 10, 12)
-		
 
 class MobBullet(Player1Bullet):
 	"""Inherant class"""
@@ -285,8 +283,8 @@ class StartMob(Mob):
 		#Change image
 		img_now = pg.time.get_ticks()
 		if img_now - self.img_last_update >= self.frame_rate:
-			self.img_last_update = img_now			
-			if self.frame == len(self.mob_images[self.img_type]):		
+			self.img_last_update = img_now
+			if self.frame == len(self.mob_images[self.img_type]):
 				self.frame = 0
 			if self.img_type == "Bmob": #Change image size if big mob
 				self.image = pg.transform.scale(self.mob_images[self.img_type][self.frame], (64, 64))
@@ -294,7 +292,6 @@ class StartMob(Mob):
 			else:
 				self.image = self.mob_images[self.img_type][self.frame]
 				self.frame += 1
-		
 
 class Boss(pg.sprite.Sprite):
 	def __init__(self, game):
@@ -333,7 +330,7 @@ class PowerUp(pg.sprite.Sprite):
 		self.rect.y += self.speedy
 		if self.rect.top >= meth.SCREENHEIGHT + 1:
 			self.kill()
-			
+
 class Explosion(pg.sprite.Sprite):
 	def __init__(self, center, size, fr_rate, game):
 		pg.sprite.Sprite.__init__(self)
@@ -428,7 +425,6 @@ class Explosion(pg.sprite.Sprite):
 				self.image = self.explosion_anim[self.size][self.frame]	
 			self.frame += 1
 
-
 class StartButtons(pg.sprite.Sprite):
 	"""docstring for StartButtons"""
 	def __init__(self, button_type, button_center, game):
@@ -455,6 +451,6 @@ class StartButtons(pg.sprite.Sprite):
 			self.image = self.buttons[self.button_type][0]
 		self.rect = self.image.get_rect()
 		self.rect.center = self.button_center
-		
 
-			
+
+

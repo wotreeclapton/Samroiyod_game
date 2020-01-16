@@ -1,4 +1,11 @@
-#Game option/settings
+#! python 3
+'''
+SAMROIYOD GAME METHODS developed by Mr Steven J walden
+    Nov. 2020
+    SAMROIYOD, PRACHUAP KIRI KHAN, THAILAND
+[See License.txt file]
+'''
+
 import os
 from contextlib import contextmanager
 
@@ -29,11 +36,6 @@ POWERUP_TIME = 10000
 #MOVE_DELAY = 550
 
 
-
-
-
-
-
 	# def play_mob_movesound(self):
 	# 	if len(self.mobs) + len(self.Bmobs) > 0 and self.player.alive():
 	# 		sound_delay = self.move_delay
@@ -44,7 +46,7 @@ POWERUP_TIME = 10000
 	# 			self.sound_last_update = now
 	# 			if self.sound:
 	# 				self.enemy_sounds[3].play()
-	# 				self.sound = False	
+	# 				self.sound = False
 	# 			else:
-	# 				self.enemy_sounds[0].play()	
+	# 				self.enemy_sounds[0].play()
 	# 				self.sound = True
