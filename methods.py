@@ -8,6 +8,7 @@ SAMROIYOD GAME METHODS developed by Mr Steven J walden
 
 import os
 from contextlib import contextmanager
+import pygame as pg
 
 @contextmanager
 def change_dir(destination): #change directory function
@@ -18,6 +19,21 @@ def change_dir(destination): #change directory function
 	finally:
 		os.chdir(cwd)
 
+def write_high_score(score): #write the high score to BAT file
+	with change_dir('resources'):
+		with open('high_score.bat', 'w') as h_score_file:
+			h_score_file.write(score)
+
+def draw_text(surf, text, size, x, y, pos): #write text to the surface
+	font_type = ['HARLOWSI.ttf','OCRAEXT.ttf']
+	with change_dir('img'):
+		font = pg.font.Font(font_type[pos], size)
+	text_surface = font.render(text, True, WHITE)
+	text_rect = text_surface.get_rect()
+	if pos == 1:
+		surf.blit(text_surface, ((x - text_rect.width / 2) ,y))
+	else:
+		surf.blit(text_surface, (x,y))
 
 COMX = 380
 COMY = 85

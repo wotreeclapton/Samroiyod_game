@@ -34,7 +34,7 @@ class Player1(pg.sprite.Sprite):
 		self.shield = 100
 		self.power_level = 1
 		self.power_time = pg.time.get_ticks()
-		self.lives = 1
+		self.lives = 3
 		self.hidden = False
 		self.hide_timer = pg.time.get_ticks()
 

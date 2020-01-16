@@ -112,6 +112,14 @@ class Game(object):
 			self.death_explosion = pg.mixer.Sound('death_explosion.wav')
 			self.death_explosion.set_volume(0.5)
 
+		#Load high score
+		with change_dir('resources'):
+			try:
+				with open('high_score.bat', 'r') as h_score_file:
+					self.high_score = int(h_score_file.read())
+			except FileNotFoundError:
+				self.high_score = 0
+
 	def newmob(self, x, y):
 		self.enemy = Mob(x, y, 'mob', 100,  g)
 		self.all_sprites.add(self.enemy)
@@ -183,8 +191,12 @@ class Game(object):
 		for hit in hits:
 			if bulletlist == self.player2_bullets:
 				self.p2score += score_amm
+				if self.p2score > self.high_score: #Update high score
+					self.high_score = self.p2score
 			else:
 				self.p1score += score_amm
+				if self.p1score > self.high_score: #Update high score
+					self.high_score = self.p1score
 			if check_group_type: #Bool value for checking the right group
 				self.boss_sound.stop()
 				random.choice(self.expl_sounds).play()
@@ -201,6 +213,7 @@ class Game(object):
 					self.powerups.add(self.powerup)
 				self.expl = Explosion(hit.rect.center, 'lg', 24, g)
 			self.all_sprites.add(self.expl)
+
 
 		#return(self.p1score)
 
@@ -239,17 +252,6 @@ class Game(object):
 			if hit.image == self.powerup.powerup_images['boss'][1]:
 				#starts the bonus level
 				pass
-
-	def draw_text(self, surf, text, size, x, y, pos):
-		self.font_type = ['HARLOWSI.ttf','OCRAEXT.ttf']
-		with change_dir('img'):
-			font = pg.font.Font(self.font_type[pos], size)
-		self.text_surface = font.render(text, True, meth.WHITE)
-		self.text_rect = self.text_surface.get_rect()
-		if pos == 1:
-			surf.blit(self.text_surface, ((x - self.text_rect.width / 2) ,y))
-		else:
-			surf.blit(self.text_surface, (x,y))
 
 	def draw_shields(self, surf, x, y, shield_amm):
 		if shield_amm <= 0:
@@ -490,10 +492,11 @@ class Game(object):
 		#Game loop - draw
 		self.win.blit(self.background_scaled, self.background_rect)
 		if self.number_of_players == 2:
-			self.draw_text(surf=self.win, text=str(self.p2score), size=22, x=566, y=2, pos=0)
+			meth.draw_text(surf=self.win, text=str(self.p2score), size=22, x=557, y=2, pos=0)
 			self.draw_shields(surf=self.win, x=608, y=8, shield_amm=self.player2.shield)
 			self.draw_lives(surf=self.win, x=720, y=3, player=self.player2)
-		self.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
+		meth.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
+		meth.draw_text(surf=self.win, text=str(self.high_score), size=18, x=meth.SCREENWIDTH/2, y=4, pos=1)
 		self.draw_shields(surf=self.win, x=166, y=8, shield_amm=self.player1.shield)
 		self.draw_lives(surf=self.win, x=278, y=3, player=self.player1)
 		self.all_sprites.draw(self.win)
@@ -581,12 +584,14 @@ class Game(object):
 				pg.display.update()
 
 	def show_go_screen(self):
+		#save high score
+		meth.write_high_score(str(self.high_score))
 		#Game over/continue screen
 		self.win.blit(self.go_background_scaled, self.background_rect)
 		#Draw score
 		if self.number_of_players == 2:
-			self.draw_text(surf=self.win, text="Player 2: {}".format(str(self.p2score)), size=38, x=400, y=535, pos=1)
-		self.draw_text(surf=self.win, text="Player 1: {}".format(str(self.p1score)), size=38, x=400, y=471, pos=1)
+			meth.draw_text(surf=self.win, text="Player 2: {}".format(str(self.p2score)), size=38, x=400, y=535, pos=1)
+		meth.draw_text(surf=self.win, text="Player 1: {}".format(str(self.p1score)), size=38, x=400, y=471, pos=1)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
 			self.clock.tick(meth.FPS)
