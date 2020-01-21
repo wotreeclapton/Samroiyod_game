@@ -35,6 +35,16 @@ def draw_text(surf, text, size, x, y, pos): #write text to the surface
 	else:
 		surf.blit(text_surface, (x,y))
 
+def screen_location(wn, avail_geom):
+	#Set the screen location of a gui [wn = passed gui object, avail_geom = available screen size]
+	#ag = QDesktopWidget().availableGeometry()
+	#sg = QDesktopWidget().screenGeometry()
+
+	widget = wn.geometry()
+	x = avail_geom.width() / 2 - widget.width() / 2
+	y = avail_geom.height() / 2 - widget.height() / 2
+	wn.move(x, y)
+
 COMX = 380
 COMY = 85
 SCREENWIDTH = 800
