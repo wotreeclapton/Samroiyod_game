@@ -34,7 +34,7 @@ class Player1(pg.sprite.Sprite):
 		self.shield = 100
 		self.power_level = 1
 		self.power_time = pg.time.get_ticks()
-		self.lives = 3
+		self.lives = 1
 		self.hidden = False
 		self.hide_timer = pg.time.get_ticks()
 
@@ -249,13 +249,13 @@ class Mob(pg.sprite.Sprite):
 		#Change image
 		img_now = pg.time.get_ticks()
 		if img_now - self.img_last_update >= self.frame_rate:
-			self.img_last_update = img_now			
-			if self.frame == len(self.mob_images[self.img_type]):		
+			self.img_last_update = img_now
+			if self.frame == len(self.mob_images[self.img_type]):
 				self.frame = 0
 			self.image = self.mob_images[self.img_type][self.frame]
 			self.frame += 1
 
-		#Move mob	
+		#Move mob
 		move_now = pg.time.get_ticks()
 		if move_now - self.move_last_update > self.game.move_delay:
 			self.move_last_update = move_now
@@ -427,28 +427,37 @@ class Explosion(pg.sprite.Sprite):
 
 class StartButtons(pg.sprite.Sprite):
 	"""docstring for StartButtons"""
-	def __init__(self, button_type, button_center, game):
+	def __init__(self, game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
 		self.load_images()
-		self.button_type = button_type
-		self.button_center = button_center
-		self.image = self.buttons[self.button_type][0]
+		self.image = self.buttons[0]
+		self.button_center = (meth.SCREENWIDTH / 2, 710)
 		self.rect = self.image.get_rect()
-		self.rect.center = button_center
-
+		self.rect.center = self.button_center
 
 	def load_images(self):
-		self.buttons = {1:[self.game.sprite_sheet.get_image(562, 858, 146, 41), self.game.sprite_sheet.get_image(402, 858, 157, 44)]
-		, 2:[self.game.sprite_sheet.get_image(562, 905, 146, 41), self.game.sprite_sheet.get_image(402, 905, 157, 44)]}
+		self.buttons = [self.game.sprite_sheet.get_image(402, 858, 324, 44)
+		, self.game.sprite_sheet.get_image(406, 906, 324, 44)]
 
 	def update(self):
-		if self.game.number_of_players == 2 and self.button_type == 2:
-			self.image = self.buttons[self.button_type][1]
-		elif self.game.number_of_players > 0 and self.button_type == 1:
-			self.image = self.buttons[self.button_type][1]
-		else:
-			self.image = self.buttons[self.button_type][0]
+		keystate = pg.key.get_pressed()
+		if keystate[pg.K_RIGHT]:
+			if self.image == self.buttons[0]:
+				self.image = self.buttons[1]
+		if keystate[pg.K_LEFT]:
+			if self.image == self.buttons[1]:
+				self.image = self.buttons[0]
+		try:
+			if self.game.joystick1.get_axis(0) > 0 or self.game.joystick2.get_axis(0) > 0:
+				if self.image == self.buttons[0]:
+					self.image = self.buttons[1]
+			if self.game.joystick1.get_axis(0) == -1 or self.game.joystick2.get_axis(0) == -1:
+				if self.image == self.buttons[1]:
+					self.image = self.buttons[0]
+		except AttributeError:
+			pass
+
 		self.rect = self.image.get_rect()
 		self.rect.center = self.button_center
 
