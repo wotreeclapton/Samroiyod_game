@@ -60,11 +60,11 @@ class Player1(pg.sprite.Sprite):
 		if keystate[pg.K_f]:
 			self.shoot(player_bull_list=self.game.player1_bullets)
 		try:
-			if self.game.joystick.get_axis(0) == -1:
+			if self.game.joystick1.get_axis(0) == -1:
 				self.speedx = -5
-			if self.game.joystick.get_axis(0) > 0:
+			if self.game.joystick1.get_axis(0) > 0:
 				self.speedx = 5
-			if self.game.joystick.get_button(0):
+			if self.game.joystick1.get_button(2):
 				self.shoot(player_bull_list=self.game.player1_bullets)
 		except AttributeError:
 			pass
@@ -132,15 +132,15 @@ class Player2(Player1):
 			self.speedx = 5
 		if keystate[pg.K_KP0]:
 			self.shoot(player_bull_list=self.game.player2_bullets)
-		# try:
-		# 	if self.game.joystick.get_axis(0) == -1:
-		# 		self.speedx = -5
-		# 	if self.game.joystick.get_axis(0) > 0:
-		# 		self.speedx = 5
-		# 	if self.game.joystick.get_button(0):
-		# 		self.shoot()
-		# except AttributeError:
-		# 	pass
+		try:
+			if self.game.joystick2.get_axis(0) == -1:
+				self.speedx = -5
+			if self.game.joystick2.get_axis(0) > 0:
+				self.speedx = 5
+			if self.game.joystick2.get_button(0):
+				self.shoot(player_bull_list=self.game.player2_bullets)
+		except AttributeError:
+			pass
 
 		self.rect.x += self.speedx
 		if self.rect.right > meth.SCREENWIDTH:

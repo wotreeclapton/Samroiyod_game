@@ -40,9 +40,17 @@ class Game(object):
 
 		#Look for joysticks and initlaize them
 		self.joystick_count = pg.joystick.get_count()
+		self.joystick_list = []
 		for i in range(self.joystick_count):
 			self.joystick = pg.joystick.Joystick(i)
 			self.joystick.init()
+			self.joystick_list.append(self.joystick)
+		
+		if self.joystick_count == 2:
+			self.joystick1 = self.joystick_list[0]
+			self.joystick2 = self.joystick_list[1]
+		elif self.joystick_count == 1:
+			self.joystick1 = self.joystick_list[0]
 
 		#Set logo and gamescreen etc
 		self.win = pg.display.set_mode((meth.SCREENWIDTH,meth.SCREENHEIGHT))
@@ -220,13 +228,13 @@ class Game(object):
 	def add_mobs(self):
 		Bmobs_y_list = [100, 166]
 		for ypos in Bmobs_y_list:
-			for i in range(1):
+			for i in range(10):
 				self.bigenemy = Mob(((i+1)*70)-15, ypos, 'Bmob', 50,  g)
 				self.all_sprites.add(self.bigenemy)
 				self.Bmobs.add(self.bigenemy)
 		mob_y_list = [227, 297, 367]
 		for ypos in mob_y_list:
-			for i in range (1):
+			for i in range (10):
 				self.newmob(((i+1)*70)-15, ypos)
 
 	def powerup_collect(self, player):
@@ -477,12 +485,12 @@ class Game(object):
 				if event.key == pg.K_p:
 					self.pause()
 			try:
-				if self.joystick.get_button(8):
+				if self.joystick1.get_button(8) or self.joystick2.get_button(6): #exit game
 					if self.playing:
 						self.playing = False
 					self.game_on = False
 					self.waiting = False
-				if self.joystick.get_button(9):
+				if self.joystick1.get_button(9) or self.joystick2.get_button(7):
 					#pause and unpause
 					self.pause()
 			except AttributeError:
@@ -548,19 +556,19 @@ class Game(object):
 							s = False
 							self.start_mobs.empty()
 					try:
-						if self.joystick.get_button(6):
+						if self.joystick1.get_button(9): #Player 1 start button
 							if self.number_of_players == 1:
 								self.number_of_players = 0
 							else:
 								self.number_of_players = 1
 								self.count = 0
-						if self.joystick.get_button(7):
+						if self.joystick2.get_button(7): #Player 2 start button
 							if self.number_of_players == 2:
 								self.number_of_players = 1
 							else:
 								self.number_of_players = 2
 								self.count = 0
-						if self.joystick.get_button(9) and self.number_of_players > 0:
+						if self.joystick1.get_button(2) or self.joystick2.get_button(0) and self.number_of_players > 0:
 							s = False
 							self.start_mobs.empty()
 					except AttributeError:
@@ -608,11 +616,12 @@ class Game(object):
 						self.waiting = False
 						self.start_screen_pass = True
 				try:
-					if self.joystick.get_button(8): #Select button to return to start screen
-						self.waiting = False
-					if self.joystick.get_button(9): #Play button to continue
-						self.waiting = False
-						self.start_screen_pass = True
+					for joystick in self.joystick_list:
+						if self.joystick.get_button(8) or self.joystick.get_button(6): #Select button to return to start screen
+							self.waiting = False
+						if self.joystick.get_button(9) or self.joystick.get_button(7): #Play button to continue
+							self.waiting = False
+							self.start_screen_pass = True
 				except AttributeError:
 					pass
 
