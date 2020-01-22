@@ -135,6 +135,7 @@ class Game(object):
 					self.orig_high_score = self.high_score
 			except FileNotFoundError:
 				self.high_score = 0
+				self.orig_high_score = self.high_score
 
 	def newmob(self, x, y):
 		self.enemy = Mob(x, y, 'mob', 100,  g)
