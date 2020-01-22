@@ -31,6 +31,7 @@ import methods as meth
 from methods import change_dir
 import sprites
 from sprites import Player1, Player2, Player1Bullet, Player2Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
+from hyperspace import hyperspace
 
 class Game(object):
 	def __init__(self):
@@ -280,6 +281,7 @@ class Game(object):
 			if hit.image == self.powerup.powerup_images['boss'][1]:
 				#starts the hyperspace level
 				self.powerup_sounds[3].play()
+				hyperspace()
 
 	def draw_shields(self, surf, x, y, shield_amm):
 		if shield_amm <= 0:
