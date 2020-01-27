@@ -265,7 +265,7 @@ class Mob(pg.sprite.Sprite):
 				self.rect.x -= self.game.speedx
 
 			#Spawn a bullet
-			if self.game.player1.alive():
+			if len(self.game.player_group) > 0:
 				if random.random() >= 0.98:
 					self.shoot()
 
@@ -499,5 +499,53 @@ class StartButtons(pg.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.center = self.button_center
 
+class Shield1(pg.sprite.Sprite):
+	"""docstring for shield"""
+	def __init__(self, xpos, game):
+		pg.sprite.Sprite.__init__(self)
+		self.game = game
+		self.load_images()
+		self.image = self.shield_images[0]
+		self.rect = self.image.get_rect()
+		self.rect.centerx = xpos
+		self.rect.bottom = meth.SCREENHEIGHT - 6
+		self.frame = 0
+		self.frame_rate = 36
+		self.last_update = pg.time.get_ticks()
+		self.speedx = 0
 
+	def load_images(self):
+		self.shield_images = [self.game.sprite_sheet.get_image(0, 1064, 133, 78), self.game.sprite_sheet.get_image(138, 1064, 144, 84), self.game.sprite_sheet.get_image(285, 1064, 144, 84),]
+
+	def update(self):
+		now = pg.time.get_ticks()
+		if now - self.last_update >= self.frame_rate:
+			self.last_update = now
+			if self.frame == len(self.shield_images):
+				self.frame = 0
+				self.kill()
+			self.image = self.shield_images[self.frame]
+			self.rect = self.image.get_rect()
+			self.rect.centerx = self.game.player1.rect.centerx
+			self.rect.bottom = meth.SCREENHEIGHT - 6
+			self.frame += 1
+
+class Shield2(Shield1):
+	"""docstring for Shield2"""
+	def __init__(self, xpos, game):
+		super(Shield2, self).__init__(xpos, game)
+		
+	def update(self):
+		now = pg.time.get_ticks()
+		if now - self.last_update >= self.frame_rate:
+			self.last_update = now
+			if self.frame == len(self.shield_images):
+				self.frame = 0
+				self.kill()
+			self.image = self.shield_images[self.frame]
+			self.rect = self.image.get_rect()
+			self.rect.centerx = self.game.player2.rect.centerx
+			self.rect.bottom = meth.SCREENHEIGHT - 6
+			self.frame += 1
+		
 

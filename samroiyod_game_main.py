@@ -348,7 +348,18 @@ class Game(object):
 			player.shield -= random.randrange(10,30)
 			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
 			self.all_sprites.add(self.expl)
-
+			try:
+				if player == self.player2:
+					self.moving_shield = sprites.Shield2(xpos=player.rect.centerx, game=g)
+					self.all_sprites.add(self.moving_shield)
+			except AttributeError:
+				print('no player2')
+			try:
+				if player == self.player1:
+					self.moving_shield = sprites.Shield1(xpos=player.rect.centerx, game=g)
+					self.all_sprites.add(self.moving_shield)
+			except AttributeError:
+				print('no player1')
 			if player.shield <= 0:
 				player.lives -= 1
 				#move the player off the screen
