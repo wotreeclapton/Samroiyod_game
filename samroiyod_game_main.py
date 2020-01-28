@@ -313,6 +313,16 @@ class Game(object):
 			self.death_explosion.play()
 			self.boss_sound.fadeout(2000)
 			player.kill()
+		try:
+			if player == self.player2:
+				self.moving_shield2.kill()
+		except AttributeError:
+			pass
+		try:
+			if player == self.player1:
+				self.moving_shield1.kill()
+		except AttributeError:
+			pass
 
 	def draw_lives(self, surf, x, y, player):
 		self.player_image_resized = pg.transform.scale(player.image, (20, 20))
@@ -350,16 +360,16 @@ class Game(object):
 			self.all_sprites.add(self.expl)
 			try:
 				if player == self.player2:
-					self.moving_shield = sprites.Shield2(xpos=player.rect.centerx, game=g)
-					self.all_sprites.add(self.moving_shield)
+					self.moving_shield2 = sprites.Shield2(xpos=player.rect.centerx, game=g)
+					self.all_sprites.add(self.moving_shield2)
 			except AttributeError:
-				print('no player2')
+				pass
 			try:
 				if player == self.player1:
-					self.moving_shield = sprites.Shield1(xpos=player.rect.centerx, game=g)
-					self.all_sprites.add(self.moving_shield)
+					self.moving_shield1 = sprites.Shield1(xpos=player.rect.centerx, game=g)
+					self.all_sprites.add(self.moving_shield1)
 			except AttributeError:
-				print('no player1')
+				pass
 			if player.shield <= 0:
 				player.lives -= 1
 				#move the player off the screen

@@ -525,10 +525,10 @@ class Shield1(pg.sprite.Sprite):
 				self.frame = 0
 				self.kill()
 			self.image = self.shield_images[self.frame]
-			self.rect = self.image.get_rect()
-			self.rect.centerx = self.game.player1.rect.centerx
-			self.rect.bottom = meth.SCREENHEIGHT - 6
 			self.frame += 1
+		self.rect = self.image.get_rect()
+		self.rect.centerx = self.game.player1.rect.centerx
+		self.rect.bottom = meth.SCREENHEIGHT - 6
 
 class Shield2(Shield1):
 	"""docstring for Shield2"""
@@ -543,9 +543,8 @@ class Shield2(Shield1):
 				self.frame = 0
 				self.kill()
 			self.image = self.shield_images[self.frame]
-			self.rect = self.image.get_rect()
-			self.rect.centerx = self.game.player2.rect.centerx
-			self.rect.bottom = meth.SCREENHEIGHT - 6
 			self.frame += 1
-		
+		self.rect = self.image.get_rect()
+		self.rect.centerx = self.game.player2.rect.centerx
+		self.rect.bottom = meth.SCREENHEIGHT - 6		
 
