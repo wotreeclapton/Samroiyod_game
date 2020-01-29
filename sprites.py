@@ -34,6 +34,8 @@ class Player1(pg.sprite.Sprite):
 		self.shield = 100
 		self.power_level = 1
 		self.power_time = pg.time.get_ticks()
+		self.active_shield = False
+		self.active_shield_time = pg.time.get_ticks()
 		self.lives = 1
 		self.hidden = False
 		self.hide_timer = pg.time.get_ticks()
@@ -49,6 +51,11 @@ class Player1(pg.sprite.Sprite):
 		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > meth.POWERUP_TIME:
 			self.power_level -= 1
 			self.power_time = pg.time.get_ticks()
+
+		#timeout for active shields
+		if self.active_shield == True and pg.time.get_ticks() - self.active_shield_time > meth.POWERUP_TIME:
+			self.active_shield = False
+			self.power_time = pg.time.get_ticks()		
 
 		self.speedx = 0
 
@@ -78,6 +85,10 @@ class Player1(pg.sprite.Sprite):
 	def powerup(self):
 		self.power_level += 1
 		self.power_time = pg.time.get_ticks()
+
+	def shieldup(self):
+		self.active_shield = True
+		self.active_shield_time = pg.time.get_ticks()
 
 	def shoot(self, player_bull_list):
 		now = pg.time.get_ticks()

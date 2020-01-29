@@ -268,10 +268,12 @@ class Game(object):
 
 			if hit.image == self.powerup.powerup_images['norm'][1]: #increase the shields
 				self.powerup_sounds[1].play()
-				if player.shield < 100:
-					player.shield += random.randrange(10, 40)
-					if player.shield > 100:
-						player.shield = 100
+				#stop the shield decreasing for a short time and add moving shield
+				player.shieldup()
+				# if player.shield < 100:
+				# 	player.shield += random.randrange(10, 40)
+				# 	if player.shield > 100:
+				# 		player.shield = 100
 
 			if hit.image == self.powerup.powerup_images['boss'][0]:
 				#give an extra life if lives are less than three
@@ -358,18 +360,20 @@ class Game(object):
 			player.shield -= random.randrange(10,30)
 			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
 			self.all_sprites.add(self.expl)
-			try:
-				if player == self.player2:
-					self.moving_shield2 = sprites.Shield2(xpos=player.rect.centerx, game=g)
-					self.all_sprites.add(self.moving_shield2)
-			except AttributeError:
-				pass
-			try:
-				if player == self.player1:
-					self.moving_shield1 = sprites.Shield1(xpos=player.rect.centerx, game=g)
-					self.all_sprites.add(self.moving_shield1)
-			except AttributeError:
-				pass
+			#activate moving sheild if shield powerup is still active
+			if player.active_shield == True:
+				try:
+					if player == self.player2:
+						self.moving_shield2 = sprites.Shield2(xpos=player.rect.centerx, game=g)
+						self.all_sprites.add(self.moving_shield2)
+				except AttributeError:
+					pass
+				try:
+					if player == self.player1:
+						self.moving_shield1 = sprites.Shield1(xpos=player.rect.centerx, game=g)
+						self.all_sprites.add(self.moving_shield1)
+				except AttributeError:
+					pass
 			if player.shield <= 0:
 				player.lives -= 1
 				#move the player off the screen
