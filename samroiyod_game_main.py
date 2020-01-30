@@ -357,7 +357,6 @@ class Game(object):
 		#Check to see if a bullet has hit the player
 		hits = pg.sprite.spritecollide(player, self.mob_bullets, True)
 		for hit in hits:
-			player.shield -= random.randrange(10,30)
 			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
 			self.all_sprites.add(self.expl)
 			#activate moving sheild if shield powerup is still active
@@ -374,6 +373,8 @@ class Game(object):
 						self.all_sprites.add(self.moving_shield1)
 				except AttributeError:
 					pass
+			else:
+				player.shield -= random.randrange(10,30)
 			if player.shield <= 0:
 				player.lives -= 1
 				#move the player off the screen
