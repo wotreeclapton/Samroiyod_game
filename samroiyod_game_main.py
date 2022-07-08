@@ -1,4 +1,3 @@
-#! python 3
 '''
 SAMROIYOD GAME LAUNCHER developed by Mr Steven J walden
     Nov. 2020
@@ -284,7 +283,7 @@ class Game(object):
 			if hit.image == self.powerup.powerup_images['boss'][1]:
 				#starts the hyperspace level
 				self.powerup_sounds[3].play()
-				self.hyperspace()
+				# self.hyperspace()
 
 	def draw_shields(self, surf, x, y, shield_amm):
 		if shield_amm <= 0:
