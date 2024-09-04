@@ -27,16 +27,18 @@ import random
 import pygame as pg
 
 import methods as meth
+import constants as const
 from methods import change_dir
 import sprites
 from sprites import Player1, Player2, Player1Bullet, Player2Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
 from hyperspace import hyperspace
+from resource_manager import ResourceManager
 
 class Game(object):
 	def __init__(self):
 		#Initialize game window, etc
 		#set game screen placement
-		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (meth.COMX,meth.COMY)
+		environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (const.COMX,const.COMY)
 		pg.mixer.pre_init(44100, -16, 1, 512)
 		pg.init()
 		pg.joystick.init()
@@ -56,7 +58,7 @@ class Game(object):
 			self.joystick1 = self.joystick_list[0]
 
 		#Set logo and gamescreen etc
-		self.win = pg.display.set_mode((meth.SCREENWIDTH,meth.SCREENHEIGHT))
+		self.win = pg.display.set_mode((const.SCREENWIDTH,const.SCREENHEIGHT))
 		with change_dir('img'):
 			self.logo = pg.image.load('eplogo_small.png')
 		pg.display.set_icon(self.logo)
@@ -81,15 +83,19 @@ class Game(object):
 		self.start_screen_pass = False
 
 	def load_data(self):
+		self.resource_manager.load_all_resources()
 		#Load all image graphics
 		with change_dir('img'):
 			self.sprite_sheet = sprites.Spritesheet("Samroiyodgame_img_sheet.png")
-			self.background = pg.image.load('Schoolbg.jpg').convert()
-			self.start_background = pg.image.load('start_screen.jpg').convert()
-			self.go_background = pg.image.load('game_over_screen.jpg').convert()
-		self.background_scaled = pg.transform.scale(self.background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
-		self.start_background_scaled = pg.transform.scale(self.start_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
-		self.go_background_scaled = pg.transform.scale(self.go_background, (meth.SCREENWIDTH,meth.SCREENHEIGHT))
+		self.background = self.resource_manager.get_image("game_screen")
+		# self.background = pg.image.load('Schoolbg.jpg').convert()
+		self.start_background = self.resource_manager.get_image("start_screen")
+		# self.start_background = pg.image.load('start_screen.jpg').convert()
+		self.go_background = self.resource_manager.get_image("gameover_screen")
+		# self.go_background = pg.image.load('game_over_screen.jpg').convert()
+		self.background_scaled = pg.transform.scale(self.background, (const.SCREENWIDTH,const.SCREENHEIGHT))
+		self.start_background_scaled = pg.transform.scale(self.start_background, (const.SCREENWIDTH,const.SCREENHEIGHT))
+		self.go_background_scaled = pg.transform.scale(self.go_background, (const.SCREENWIDTH,const.SCREENHEIGHT))
 		self.background_rect = self.background_scaled.get_rect()
 		self.player_one_img = self.sprite_sheet.get_image(0, 965, 243, 45)
 		self.player_two_img = self.sprite_sheet.get_image(0, 1014, 243, 45)
@@ -143,7 +149,7 @@ class Game(object):
 
 	def enemy_check(self):
 		for enemy in self.mobs.sprites() + self.Bmobs.sprites():
-			if enemy.rect.centerx >= meth.SCREENWIDTH - 25 or enemy.rect.centerx <= 25:
+			if enemy.rect.centerx >= const.SCREENWIDTH - 25 or enemy.rect.centerx <= 25:
 				self.direction_switch = True
 
 		if self.direction_switch and self.mob_direction:
@@ -180,14 +186,14 @@ class Game(object):
 			while True:
 				self.clock.tick(120)
 				if len(self.player_group) == 2:
-					self.player1.move_to_center_anim(xpos=round(meth.SCREENWIDTH/3))
-					self.player2.move_to_center_anim(xpos=round(meth.SCREENWIDTH / 3)*2)
-					if self.player1.rect.centerx == round(meth.SCREENWIDTH/3) and self.player2.rect.centerx == round(meth.SCREENWIDTH / 3)*2:
+					self.player1.move_to_center_anim(xpos=round(const.SCREENWIDTH/3))
+					self.player2.move_to_center_anim(xpos=round(const.SCREENWIDTH / 3)*2)
+					if self.player1.rect.centerx == round(const.SCREENWIDTH/3) and self.player2.rect.centerx == round(const.SCREENWIDTH / 3)*2:
 						break
 				elif len(self.player_group) == 1:
 					for player in self.player_group:
-						player.move_to_center_anim(xpos=meth.SCREENWIDTH/2)
-					if player.rect.centerx == meth.SCREENWIDTH/2:
+						player.move_to_center_anim(xpos=const.SCREENWIDTH/2)
+					if player.rect.centerx == const.SCREENWIDTH/2:
 						break
 				else:
 					break
@@ -197,7 +203,7 @@ class Game(object):
 					self.clock.tick(140)
 					for player in self.player_group:
 						player.blastoff_anim()
-					if player.rect.top == meth.SCREENHEIGHT/2:
+					if player.rect.top == const.SCREENHEIGHT/2:
 						break
 				else:
 					break
@@ -293,8 +299,8 @@ class Game(object):
 		self.fill = (shield_amm / 100) * self.bar_length
 		self.outline_rect = pg.Rect(x, y, self.bar_length, self.bar_height)
 		self.fill_rect = pg.Rect(x, y, self.fill, self.bar_height)
-		pg.draw.rect(surf, meth.GREEN, self.fill_rect)
-		pg.draw.rect(surf, meth.WHITE, self.outline_rect, 1)
+		pg.draw.rect(surf, const.GREEN, self.fill_rect)
+		pg.draw.rect(surf, const.WHITE, self.outline_rect, 1)
 
 	def player_death(self, hit, player):
 		self.expl = Explosion(hit, 'boss', 100, g)
@@ -401,8 +407,8 @@ class Game(object):
 			self.win.blit(self.background_scaled, self.background_rect)
 			#display pause writing
 			if count <= 300:
-				self.win.blit(self.paused_img, (meth.SCREENWIDTH / 2 - self.paused_img_rect.width / 2, meth.SCREENHEIGHT / 2))
-				#self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=meth.SCREENHEIGHT / 2, pos=1)
+				self.win.blit(self.paused_img, (const.SCREENWIDTH / 2 - self.paused_img_rect.width / 2, const.SCREENHEIGHT / 2))
+				#self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=const.SCREENHEIGHT / 2, pos=1)
 			if count >= 600:
 				count = 0
 			count += 1
@@ -434,12 +440,12 @@ class Game(object):
 		#choose 1 or 2 players
 		if self.number_of_players == 2:
 			self.p2score=0
-			self.player2 = Player2(xpos=(meth.SCREENWIDTH / 3)*2, game=g)
+			self.player2 = Player2(xpos=(const.SCREENWIDTH / 3)*2, game=g)
 			self.player_group.add(self.player2)
 			self.all_sprites.add(self.player2)
-			self.player1 = Player1(xpos=meth.SCREENWIDTH / 3, game=g)
+			self.player1 = Player1(xpos=const.SCREENWIDTH / 3, game=g)
 		else:
-			self.player1 = Player1(xpos=meth.SCREENWIDTH / 2, game=g)
+			self.player1 = Player1(xpos=const.SCREENWIDTH / 2, game=g)
 		self.p1score=0
 		self.player_group.add(self.player1)
 		self.all_sprites.add(self.player1)
@@ -456,7 +462,7 @@ class Game(object):
 		#Game loop
 		self.playing = True
 		while self.playing:
-			self.clock.tick(meth.FPS)
+			self.clock.tick(const.FPS)
 			self.events()
 			self.update()
 			self.draw()
@@ -490,7 +496,7 @@ class Game(object):
 			self.add_mobs()
 			#check what players are alive set at the bottom
 			for player in self.player_group:
-				player.rect.bottom = meth.SCREENHEIGHT - 6
+				player.rect.bottom = const.SCREENHEIGHT - 6
 
 		#Check to see if a mob bullet has hit either player
 		if self.number_of_players == 2:
@@ -560,11 +566,11 @@ class Game(object):
 		#Game loop - draw
 		self.win.blit(self.background_scaled, self.background_rect)
 		if self.number_of_players == 2:
-			meth.draw_text(surf=self.win, text=str(self.p2score), size=22, x=557, y=2, pos=0)
+			const.draw_text(surf=self.win, text=str(self.p2score), size=22, x=557, y=2, pos=0)
 			self.draw_shields(surf=self.win, x=608, y=8, shield_amm=self.player2.shield)
 			self.draw_lives(surf=self.win, x=720, y=3, player=self.player2)
-		meth.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
-		meth.draw_text(surf=self.win, text=str(self.high_score), size=18, x=meth.SCREENWIDTH/2, y=4, pos=1)
+		const.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
+		const.draw_text(surf=self.win, text=str(self.high_score), size=18, x=const.SCREENWIDTH/2, y=4, pos=1)
 		self.draw_shields(surf=self.win, x=166, y=8, shield_amm=self.player1.shield)
 		self.draw_lives(surf=self.win, x=278, y=3, player=self.player1)
 		self.all_sprites.draw(self.win)
@@ -665,7 +671,7 @@ class Game(object):
 					self.win.blit(self.player_one_img, (46, 607))
 				if self.number_of_players != 0: #draw press start text
 					if self.count <= 200:
-						self.win.blit(self.press_start_img, (meth.SCREENWIDTH / 2 - self.press_start_img_rect.width / 2, 330))
+						self.win.blit(self.press_start_img, (const.SCREENWIDTH / 2 - self.press_start_img_rect.width / 2, 330))
 					if self.count >= 400:
 						self.count = 0
 					self.count += 1
@@ -675,16 +681,16 @@ class Game(object):
 
 	def show_go_screen(self):
 		#save high score
-		meth.write_high_score(str(self.high_score))
+		const.write_high_score(str(self.high_score))
 		#Game over/continue screen
 		self.win.blit(self.go_background_scaled, self.background_rect)
 		#Draw score
 		if self.number_of_players == 2:
-			meth.draw_text(surf=self.win, text=f"Player 2: {self.p2score}", size=38, x=400, y=535, pos=1)
-		meth.draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
+			const.draw_text(surf=self.win, text=f"Player 2: {self.p2score}", size=38, x=400, y=535, pos=1)
+		const.draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
 		pg.mixer.music.fadeout(2000)
 		while self.waiting:
-			self.clock.tick(meth.FPS)
+			self.clock.tick(const.FPS)
 
 			for event in pg.event.get():#exit loop
 				if event.type == pg.QUIT:
