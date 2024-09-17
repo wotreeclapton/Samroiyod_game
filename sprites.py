@@ -9,10 +9,13 @@ SAMROIYOD GAME SPRITES developed by Mr Steven J walden
 import random
 import pygame as pg
 import methods as meth
+import constants as const
 
 class Spritesheet:
 	def __init__(self, filename):
-		self.spritesheet = pg.image.load(filename).convert_alpha()
+		# self.game = game
+		# self.spritesheet = self.game.resource_manager.get_image(filename)
+		self.spritesheet = pg.image.load(filename)
 
 	def get_image(self, x, y, width, height):
 		#Grab an image from the sheet
@@ -24,10 +27,13 @@ class Player1(pg.sprite.Sprite):
 	def __init__(self, xpos , game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.image = self.game.sprite_sheet.get_image(354, 256, 64, 64)
+		self.image = self.game.resource_manager.get_sprite_image("player1")
 		self.rect = self.image.get_rect()
 		self.rect.centerx = xpos
 		self.rect.bottom = meth.SCREENHEIGHT - 6
+		self.shoot_sound = pg.mixer.Sound(
+			self.game.resource_manager.get_sound("shoot_sound"))
+		self.shoot_sound.set_volume(0.04)
 		self.speedx = 1
 		self.shoot_delay = 750
 		self.last_shot = pg.time.get_ticks()
@@ -41,21 +47,9 @@ class Player1(pg.sprite.Sprite):
 		self.hide_timer = pg.time.get_ticks()
 
 	def update(self):
-		#unhide if hidden
-		if self.hidden and pg.time.get_ticks() - self.hide_timer > 1000:
-			self.hidden = False
-			self.rect.centerx = meth.SCREENWIDTH / 2
-			self.rect.bottom = meth.SCREENHEIGHT - 6
-
-		#timeout for powerups
-		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > meth.POWERUP_TIME:
-			self.power_level -= 1
-			self.power_time = pg.time.get_ticks()
-
-		#timeout for active shields
-		if self.active_shield == True and pg.time.get_ticks() - self.active_shield_time > meth.POWERUP_TIME:
-			self.active_shield = False
-			self.power_time = pg.time.get_ticks()		
+		self.player_hidden_check()
+		self.powerup_timeout_check()
+		self.shield_timeout_check()
 
 		self.speedx = 0
 
@@ -77,10 +71,29 @@ class Player1(pg.sprite.Sprite):
 			pass
 
 		self.rect.x += self.speedx
+		self.screen_edge_check()
+
+	def screen_edge_check(self):
 		if self.rect.right > meth.SCREENWIDTH:
 			self.rect.right = meth.SCREENWIDTH
 		if self.rect.left < 0:
 			self.rect.left = 0
+
+	def player_hidden_check(self):
+		if self.hidden and pg.time.get_ticks() - self.hide_timer > 1000:
+			self.hidden = False
+			self.rect.centerx = meth.SCREENWIDTH / 2
+			self.rect.bottom = meth.SCREENHEIGHT - 6
+
+	def shield_timeout_check(self):
+		if self.active_shield == True and pg.time.get_ticks() - self.active_shield_time > meth.POWERUP_TIME:
+			self.active_shield = False
+			self.power_time = pg.time.get_ticks()
+
+	def	powerup_timeout_check(self):
+		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > meth.POWERUP_TIME:
+			self.power_level -= 1
+			self.power_time = pg.time.get_ticks()
 
 	def powerup(self):
 		self.power_level += 1
@@ -109,7 +122,7 @@ class Player1(pg.sprite.Sprite):
 			else:
 				self.game.all_sprites.add(self.bullet_list[0])
 				player_bull_list.add(self.bullet_list[0])
-			self.game.shoot_sound.play()
+			self.shoot_sound.play()
 
 	def hide(self):
 		self.hidden = True
@@ -128,11 +141,14 @@ class Player1(pg.sprite.Sprite):
 		if self.rect.top > meth.SCREENHEIGHT/2:
 			self.rect.top -= 1
 
+	def death_check(self, hit):
+		self.expl = Explosion(hit, "boss", 100, self.game)
+
 class Player2(Player1):
 	"""docstring for Player2"""
 	def __init__(self, xpos , game):
 		super(Player2, self).__init__(xpos , game)
-		self.image = self.game.sprite_sheet.get_image(408, 339, 64, 64)
+		self.image = self.game.resource_manager.get_sprite_image("player2")
 
 	def update(self):
 		self.speedx = 0
@@ -154,16 +170,17 @@ class Player2(Player1):
 			pass
 
 		self.rect.x += self.speedx
-		if self.rect.right > meth.SCREENWIDTH:
-			self.rect.right = meth.SCREENWIDTH
-		if self.rect.left < 0:
-			self.rect.left = 0
+		"""Check if works from player 1 code"""
+		# if self.rect.right > meth.SCREENWIDTH:
+		# 	self.rect.right = meth.SCREENWIDTH
+		# if self.rect.left < 0:
+		# 	self.rect.left = 0
 
 class Player1Bullet(pg.sprite.Sprite):
 	def __init__(self, x ,y, game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.image = self.game.sprite_sheet.get_image(346, 321, 10, 12)
+		self.image = self.game.resource_manager.get_sprite_image("player1_bullet")
 		self.rect = self.image.get_rect()
 		self.rect.centerx = x
 		self.rect.bottom = y
@@ -178,13 +195,14 @@ class Player2Bullet(Player1Bullet):
 	"""docstring for Player2Bullet"""
 	def __init__(self, x ,y, game):
 		super(Player2Bullet, self).__init__(x ,y, game)
-		self.image = self.game.sprite_sheet.get_image(358, 321, 10, 12)
+		self.image = self.game.resource_manager.get_sprite_image("player2_bullet")
 
 class MobBullet(Player1Bullet):
 	"""Inherant class"""
 	def __init__(self, x, y, game):
 		super().__init__(x, y, game)
-		self.image = self.game.sprite_sheet.get_image(339, 321, 5, 24)
+		# self.image = self.game.sprite_sheet.get_image(339, 321, 5, 24)
+		self.image = self.game.resource_manager.get_sprite_image("invader_bullet")
 		self.rect.top = y
 		self.speedy = 6
 
@@ -199,71 +217,27 @@ class Mob(pg.sprite.Sprite):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
 		self.img_type = img_type
-		self.load_images()
-		self.image = self.mob_images[self.img_type][0]
+		self.image = self.game.resource_manager.get_sprite_image(f"{self.img_type}_enemy1")
 		self.rect = self.image.get_rect()
 		self.rect.x = x
 		self.rect.y = y
 		#self.speedx = 5
 		#self.direction = True
-		self.frame = 0
+		self.frame = 1
 		self.move_last_update = pg.time.get_ticks()
 		self.frame_rate = frame_rate
 		self.img_last_update = pg.time.get_ticks()
 		#self.sound = True
-
-	def load_images(self):
-		self.mob_images = {}
-		self.mob_images['mob'] = [pg.transform.scale(self.game.sprite_sheet.get_image(0, 272, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 272, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 272, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 272, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 272, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 358, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 358, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 358, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 358, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 358, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 445, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 445, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 445, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 445, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 445, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 532, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 532, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 532, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 532, 64, 80), (50, 64)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 532, 64, 80), (50, 64))]
-
-		self.mob_images['Bmob'] = [pg.transform.scale(self.game.sprite_sheet.get_image(0, 0, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 0, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 0, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 0, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 0, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 68, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 68, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 68, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 68, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 68, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 135, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 135, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 135, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 135, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 135, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(0, 205, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(68, 205, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(135, 205, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(203, 205, 64, 64), (50, 50)),
-						   pg.transform.scale(self.game.sprite_sheet.get_image(272, 205, 64, 64), (50, 50))]
 
 	def update(self):
 		#Change image
 		img_now = pg.time.get_ticks()
 		if img_now - self.img_last_update >= self.frame_rate:
 			self.img_last_update = img_now
-			if self.frame == len(self.mob_images[self.img_type]):
-				self.frame = 0
-			self.image = self.mob_images[self.img_type][self.frame]
+			if self.frame == 21:
+				self.frame = 1
+			self.image = self.game.resource_manager.get_sprite_image(
+				f"{self.img_type}_enemy{self.frame}")
 			self.frame += 1
 
 		#Move mob
@@ -295,30 +269,34 @@ class StartMob(Mob):
 		img_now = pg.time.get_ticks()
 		if img_now - self.img_last_update >= self.frame_rate:
 			self.img_last_update = img_now
-			if self.frame == len(self.mob_images[self.img_type]):
-				self.frame = 0
-			if self.img_type == "Bmob": #Change image size if big mob
-				self.image = pg.transform.scale(self.mob_images[self.img_type][self.frame], (64, 64))
+			if self.frame == 21:
+				self.frame = 1
+			if self.img_type == "ep": #Change image size if big mob
+				self.image = pg.transform.scale(self.game.resource_manager.get_sprite_image(
+                            f"{self.img_type}_enemy{self.frame}"), (64, 64))
 				self.frame += 1
 			else:
-				self.image = self.mob_images[self.img_type][self.frame]
+				self.image = self.game.resource_manager.get_sprite_image(
+                                    f"{self.img_type}_enemy{self.frame}")
 				self.frame += 1
 
 class Boss(pg.sprite.Sprite):
 	def __init__(self, game):
 		pg.sprite.Sprite.__init__(self)
 		self. game = game
-		self.image = pg.transform.scale(self.game.sprite_sheet.get_image(497 , 256, 72, 96), (50, 66))
+		self.image = self.game.resource_manager.get_sprite_image("boss")
 		self.rect = self.image.get_rect()
 		self.rect.x = meth.SCREENWIDTH + 1
 		self.rect.y = 28
+		self.sound = self.game.resource_manager.get_sound("boss_enemy_sound")
+		self.sound.play(-1)
 		self.speedx = 2
 
 	def update(self):
 		self.rect.x -= self.speedx
 		if self.rect.right < 0:
 			self.kill()
-			self.game.boss_sound.fadeout(600)
+			self.sound.fadeout(600)
 
 class HyperMob(Mob):
 	"""docstring for HyperMob"""
@@ -330,20 +308,20 @@ class HyperMob(Mob):
 		self.rect = self.image.get_rect()
 		self.radius = int(self.rect.width *.85 /2)
 		#pygame.draw.circle(self.image, red, self.rect.center, self.radius)	
-		self.rect.x = random.randrange(screenwidth - self.rect.width)
+		self.rect.x = random.randrange(const.SCREENWIDTH - self.rect.width)
 		self.rect.y = random.randrange(-150,-100)
 		self.speedy = random.randrange(1,8)
 		self.speedx = random.randrange(-3,3)
 		self.rot = 0
 		self.rot_speed = random.randrange(-8, 8)
-		self.last_update = pygame.time.get_ticks()
+		self.last_update = pg.time.get_ticks()
 
 	def rotate(self):
-		now = pygame.time.get_ticks()
+		now = pg.time.get_ticks()
 		if now - self.last_update > 50:
 			self.last_update = now
 			self.rot = self.rot + self.rot_speed % 360
-			new_image = pygame.transform.rotate(self.image_orig, self.rot)
+			new_image = pg.transform.rotate(self.image_orig, self.rot)
 			old_center = self.rect.center
 			self.image = new_image
 			self.rect = self.image.get_rect()
@@ -362,18 +340,11 @@ class PowerUp(pg.sprite.Sprite):
 	def __init__(self,center, img_type, game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.img_type = img_type
-		self.type = random.choice([0,1])
-		self.load_images()
-		self.image = self.powerup_images[self.img_type][self.type]
+		self.type = random.choice([1,2])
+		self.image = self.game.resource_manager.get_sprite_image(f"powerup_{img_type}{self.type}")
 		self.rect = self.image.get_rect()
 		self.rect.center = center
 		self.speedy = 5
-
-	def load_images(self):
-		self.powerup_images = {}
-		self.powerup_images['norm'] = [pg.transform.scale(self.game.sprite_sheet.get_image(425, 290, 28, 46), (15, 24)), pg.transform.scale(self.game.sprite_sheet.get_image(459, 256, 32, 30), (24, 26))]
-		self.powerup_images['boss'] = [pg.transform.scale(self.game.sprite_sheet.get_image(458, 291, 32, 32), (24, 25)),  pg.transform.scale(self.game.sprite_sheet.get_image(425, 256, 32, 32), (24, 24))]
 
 	def update(self):
 		self.rect.y += self.speedy
@@ -381,161 +352,67 @@ class PowerUp(pg.sprite.Sprite):
 			self.kill()
 
 class Explosion(pg.sprite.Sprite):
-	def __init__(self, center, size, fr_rate, game):
+	def __init__(self, center, img_type, fr_rate, game, snd_type):
 		pg.sprite.Sprite.__init__(self)
 		#self.size = size ***use for dictionary of diff images!***
 		self. game = game
-		self.size =size
-		self.load_images()
-		self.image = self.explosion_anim[self.size][0]
+		self.img_type = img_type
+		self.image = self.game.resource_manager.get_sprite_image(f"{self.img_type}_explosion1")
 		self.rect = self.image.get_rect()
 		self.rect.center = center
-		self.frame = 0
+		if snd_type == "mob": #Normal mob explosion sound
+			self.sound = self.game.resource_manager.get_sound("mob_explosion_sound")
+			self.sound.set_volume(0.04)
+		elif snd_type == "death": #Final player death explosion sound
+			self.sound = self.game.resource_manager.get_sound("death_sound")
+			self.sound.set_volume(0.5)			
+		elif snd_type == "boss": #Boss explosion sound
+			self.sound = self.game.resource_manager.get_sound(
+				f"explosion{random.randint(1, 2)}_sound")
+		self.sound.play()
+		self.frame = 1
 		self.frame_rate = fr_rate
 		self.last_update = pg.time.get_ticks()
-
-	def load_images(self):
-		self.explosion_anim = {}
-		self.explosion_anim['lg'] = [self.game.sprite_sheet.get_image(342, 0, 64, 64),
-							   self.game.sprite_sheet.get_image(406, 0, 64, 64),
-							   self.game.sprite_sheet.get_image(470, 0, 64, 64),
-							   self.game.sprite_sheet.get_image(534, 0, 64, 64),
-							   self.game.sprite_sheet.get_image(342, 64, 64, 64),
-							   self.game.sprite_sheet.get_image(406, 64, 64, 64),
-							   self.game.sprite_sheet.get_image(470, 64, 64, 64),
-							   self.game.sprite_sheet.get_image(534, 64, 64, 64),
-							   self.game.sprite_sheet.get_image(342, 128, 64, 64),
-							   self.game.sprite_sheet.get_image(406, 128, 64, 64),
-							   self.game.sprite_sheet.get_image(470, 128, 64, 64),
-							   self.game.sprite_sheet.get_image(534, 128, 64, 64),
-							   self.game.sprite_sheet.get_image(342, 192, 64, 64),
-							   self.game.sprite_sheet.get_image(406, 192, 64, 64),
-							   self.game.sprite_sheet.get_image(470, 192, 64, 64),
-							   self.game.sprite_sheet.get_image(534, 192, 64, 64)]
-
-		self.explosion_anim['sm'] = [pg.transform.scale(self.game.sprite_sheet.get_image(342, 0, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(406, 0, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(470, 0, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(534, 0, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(342, 64, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(406, 64, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(470, 64, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(534, 64, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(342, 128, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(406, 128, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(470, 128, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(534, 128, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(342, 192, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(406, 192, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(470, 192, 64, 64), (32, 32)),
-							   pg.transform.scale(self.game.sprite_sheet.get_image(534, 192, 64, 64), (32, 32))]
-
-		self.explosion_anim['boss'] = [pg.transform.scale(self.game.sprite_sheet.get_image(344, 404, 128, 128), (192, 192)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(435, 404, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(532, 404, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(633, 404, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(734, 404, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(344, 501, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(451, 501, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(559, 501, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(672, 501, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(344, 607, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(460, 607, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(577, 607, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(696, 607, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(578, 305, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(704, 305, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(578, 202, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(702, 202, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(604, 98, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(735, 98, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(604, 0, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(735, 0, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(0, 618, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(133, 618, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(0, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(133, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(271, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(406, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(547, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(681, 727, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(0, 834, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(133, 834, 128, 128), (210, 210)),
-								   pg.transform.scale(self.game.sprite_sheet.get_image(271, 834, 128, 128), (210, 210))
-								   ]
 
 	def update(self):
 		now = pg.time.get_ticks()
 		if now - self.last_update >= self.frame_rate:
-			self.last_update = now		
-			if self.frame == len(self.explosion_anim[self.size]):
+			self.last_update = now
+			if self.img_type == "boss":
+				if self.frame == 33:
+					self.kill()
+				else:
+					self.image = self.game.resource_manager.get_sprite_image(
+						f"{self.img_type}_explosion{self.frame}")
+			elif self.frame == 17:
 				self.kill()
 			else:
-				self.image = self.explosion_anim[self.size][self.frame]	
+				self.image = self.game.resource_manager.get_sprite_image(
+                            f"{self.img_type}_explosion{self.frame}")
 			self.frame += 1
-
-class StartButtons(pg.sprite.Sprite):
-	"""docstring for StartButtons"""
-	def __init__(self, game):
-		pg.sprite.Sprite.__init__(self)
-		self.game = game
-		self.load_images()
-		self.image = self.buttons[0]
-		self.button_center = (meth.SCREENWIDTH / 2, 710)
-		self.rect = self.image.get_rect()
-		self.rect.center = self.button_center
-
-	def load_images(self):
-		self.buttons = [self.game.sprite_sheet.get_image(402, 858, 324, 44)
-		, self.game.sprite_sheet.get_image(406, 906, 324, 44)]
-
-	def update(self):
-		keystate = pg.key.get_pressed()
-		if keystate[pg.K_RIGHT]:
-			if self.image == self.buttons[0]:
-				self.image = self.buttons[1]
-		if keystate[pg.K_LEFT]:
-			if self.image == self.buttons[1]:
-				self.image = self.buttons[0]
-		try:
-			if self.game.joystick1.get_axis(0) > 0 or self.game.joystick2.get_axis(0) > 0:
-				if self.image == self.buttons[0]:
-					self.image = self.buttons[1]
-			if self.game.joystick1.get_axis(0) == -1 or self.game.joystick2.get_axis(0) == -1:
-				if self.image == self.buttons[1]:
-					self.image = self.buttons[0]
-		except AttributeError:
-			pass
-
-		self.rect = self.image.get_rect()
-		self.rect.center = self.button_center
 
 class Shield1(pg.sprite.Sprite):
 	"""docstring for shield"""
 	def __init__(self, xpos, game):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.load_images()
-		self.image = self.shield_images[0]
+		self.image = self.game.resource_manager.get_sprite_image("shield1")
 		self.rect = self.image.get_rect()
 		self.rect.centerx = xpos
 		self.rect.bottom = meth.SCREENHEIGHT - 6
-		self.frame = 0
+		self.frame = 1
 		self.frame_rate = 36
 		self.last_update = pg.time.get_ticks()
 		self.speedx = 0
-
-	def load_images(self):
-		self.shield_images = [self.game.sprite_sheet.get_image(0, 1064, 133, 78), self.game.sprite_sheet.get_image(138, 1064, 144, 84), self.game.sprite_sheet.get_image(285, 1064, 144, 84),]
 
 	def update(self):
 		now = pg.time.get_ticks()
 		if now - self.last_update >= self.frame_rate:
 			self.last_update = now
-			if self.frame == len(self.shield_images):
-				self.frame = 0
+			if self.frame == 4:
+				self.frame = 1
 				self.kill()
-			self.image = self.shield_images[self.frame]
+			self.image = self.game.resource_manager.get_sprite_image(f"shield{self.frame}")
 			self.frame += 1
 		self.rect = self.image.get_rect()
 		self.rect.centerx = self.game.player1.rect.centerx
@@ -550,10 +427,10 @@ class Shield2(Shield1):
 		now = pg.time.get_ticks()
 		if now - self.last_update >= self.frame_rate:
 			self.last_update = now
-			if self.frame == len(self.shield_images):
-				self.frame = 0
+			if self.frame == 4:
+				self.frame = 1
 				self.kill()
-			self.image = self.shield_images[self.frame]
+			self.image = self.game.resource_manager.get_sprite_image(f"shield{self.frame}")
 			self.frame += 1
 		self.rect = self.image.get_rect()
 		self.rect.centerx = self.game.player2.rect.centerx

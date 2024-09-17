@@ -8,11 +8,26 @@
 	[See License.txt file]
 """
 
+from os import path
+
+__AUTHOR__ = "Mr Steven J Walden"
+__VERSION__ = "1.2.0"
+
+GAMENAME = "Samroiyod invaders V"
+
+GAME_FOLDER = path.dirname(__file__)
+IMAGE_FOLDER = path.join(GAME_FOLDER, "img")
+SOUND_FOLDER = path.join(GAME_FOLDER, "snd")
+RESOURCES_FOLDER = path.join(GAME_FOLDER, "resources")
+
 COMX = 380
 COMY = 85
 SCREENWIDTH = 800
 SCREENHEIGHT = 780
 FPS = 60
+START_BUTTON1_X = SCREENWIDTH/2 - 87
+START_BUTTON2_X = SCREENWIDTH/2 + 87
+MUSIC_VOLUME = 1.0
 
 # Colours
 WHITE = (255, 255, 255)

@@ -12,25 +12,25 @@ enemy move down check
 level up clear bullets and bosses
 Joystick prob
 powerup rewards
-	double points
+double points
 make bonus level
 level bosses
 create a delay and message on level change
 hyperspace
 '''
-__author__ = 'Mr Steven J Walden'
-__version__ = '1.0.1'
-
-from os import environ
+from os import environ, path
 import sys
 import random
 import pygame as pg
 
+import start
+import pause
 import methods as meth
 import constants as const
+from game_over import GameOverScreen
 from methods import change_dir
 import sprites
-from sprites import Player1, Player2, Player1Bullet, Player2Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob, StartButtons
+from sprites import Player1, Player2, Player1Bullet, Player2Bullet, MobBullet, Mob, Boss, PowerUp, Explosion, StartMob
 from hyperspace import hyperspace
 from resource_manager import ResourceManager
 
@@ -59,15 +59,19 @@ class Game(object):
 
 		#Set logo and gamescreen etc
 		self.win = pg.display.set_mode((const.SCREENWIDTH,const.SCREENHEIGHT))
-		with change_dir('img'):
-			self.logo = pg.image.load('eplogo_small.png')
+		try:
+			self.logo = pg.image.load(path.join(const.IMAGE_FOLDER, "eplogo_small.png"))
+		except pg.error as e:
+			print(f"Failed to load logo: {e}")
 		pg.display.set_icon(self.logo)
-		pg.display.set_caption(f'Samroiyod invaders V {__version__}')
-		self.clock = pg.time.Clock()
+		pg.display.set_caption(f"{const.GAMENAME} {const.__VERSION__}")
 
+		self.clock = pg.time.Clock()
+		self.resource_manager = ResourceManager()
 		self.load_data()
 
 		#Define game variables
+		self.game_on = True
 		self.rand_delay = random.randrange(8400,12000)
 		self.last_update = pg.time.get_ticks()
 		self.boss_last_update = pg.time.get_ticks()
@@ -75,75 +79,44 @@ class Game(object):
 		self.sound = True
 		self.mob_direction =True
 		self.direction_switch = False
-		self.game_on = True
 		self.move_delay = 600
 		self.speedx = 5
 		self.movey = 12
 		self.game_level = 1
-		self.start_screen_pass = False
+		self.number_of_players = 0
 
 	def load_data(self):
 		self.resource_manager.load_all_resources()
 		#Load all image graphics
-		with change_dir('img'):
-			self.sprite_sheet = sprites.Spritesheet("Samroiyodgame_img_sheet.png")
+
+		self.sprite_sheet = self.resource_manager.get_image("spritesheet")
 		self.background = self.resource_manager.get_image("game_screen")
-		# self.background = pg.image.load('Schoolbg.jpg').convert()
-		self.start_background = self.resource_manager.get_image("start_screen")
-		# self.start_background = pg.image.load('start_screen.jpg').convert()
-		self.go_background = self.resource_manager.get_image("gameover_screen")
-		# self.go_background = pg.image.load('game_over_screen.jpg').convert()
-		self.background_scaled = pg.transform.scale(self.background, (const.SCREENWIDTH,const.SCREENHEIGHT))
-		self.start_background_scaled = pg.transform.scale(self.start_background, (const.SCREENWIDTH,const.SCREENHEIGHT))
-		self.go_background_scaled = pg.transform.scale(self.go_background, (const.SCREENWIDTH,const.SCREENHEIGHT))
-		self.background_rect = self.background_scaled.get_rect()
-		self.player_one_img = self.sprite_sheet.get_image(0, 965, 243, 45)
-		self.player_two_img = self.sprite_sheet.get_image(0, 1014, 243, 45)
-		self.press_start_img = self.sprite_sheet.get_image(248, 964, 379, 58)
-		self.press_start_img_rect = self.press_start_img.get_rect()
-		self.paused_img = self.sprite_sheet.get_image(640, 964, 207, 57)
-		self.paused_img_rect = self.paused_img.get_rect()
+		self.background_rect = self.background.get_rect()
+		
+		# self.paused_img = self.resource_manager.load_spritesheet_image("spritesheet", 640, 964, 207, 57)
+		# self.paused_img_rect = self.paused_img.get_rect()
 
 		#Load all games sounds
-		with change_dir('snd'):
-			self.shoot_sound = pg.mixer.Sound('bullet_shoot.wav')
-			self.shoot_sound.set_volume(0.04)
-			self.normal_expl_sound = pg.mixer.Sound('enemy_killed.wav')
-			self.normal_expl_sound.set_volume(0.04)
-			self.high_score_sound = pg.mixer.Sound('new_highscore.ogg')
-			self.high_score_sound.set_volume(0.6)
-			self.enemy_sounds = []
-			for snd in ['fastinvader1.wav','fastinvader2.wav','fastinvader3.wav','fastinvader4.wav']:
-				self.enemy_sounds.append(pg.mixer.Sound(snd))
-			self.enemy_sounds[0].set_volume(0.08)
-			self.enemy_sounds[3].set_volume(0.1)
-			self.expl_sounds = []
-			for snd in ['Explosion1.wav','Explosion2.wav']:
-				self.expl_sounds.append(pg.mixer.Sound(snd))
-			self.boss_sound = pg.mixer.Sound('ufo_lowpitch.wav')
-			self.boss_sound.set_volume(0.05)
-			self.powerup_sounds = []
-			for snd in ['guns.wav','shield.wav','extra_life.wav','hyperspace_collect.wav']:
-				self.powerup_sounds.append(pg.mixer.Sound(snd))
-			self.powerup_sounds[0].set_volume(0.15)
-			self.powerup_sounds[1].set_volume(0.18)
-			self.powerup_sounds[2].set_volume(0.1)
-			self.powerup_sounds[3].set_volume(0.3)
-			self.death_explosion = pg.mixer.Sound('death_explosion.wav')
-			self.death_explosion.set_volume(0.5)
+		self.high_score_sound = pg.mixer.Sound(self.resource_manager.get_sound("high_score_sound"))
+		self.high_score_sound.set_volume(0.6)
+
+		# self.enemy_sounds = []
+		# for snd in ['fastinvader1.wav','fastinvader2.wav','fastinvader3.wav','fastinvader4.wav']:
+		# 	self.enemy_sounds.append(pg.mixer.Sound(snd))
+		# self.enemy_sounds[0].set_volume(0.08)
+		# self.enemy_sounds[3].set_volume(0.1)
 
 		#Load high score
-		with change_dir('resources'):
-			try:
-				with open('high_score.bat', 'r') as h_score_file:
-					self.high_score = int(h_score_file.read())
-					self.orig_high_score = self.high_score
-			except FileNotFoundError:
-				self.high_score = 0
+		try:
+			with open(path.join(const.RESOURCES_FOLDER, "high_score.bat"), "r") as h_score_file:
+				self.high_score = int(h_score_file.read())
 				self.orig_high_score = self.high_score
+		except FileNotFoundError:
+			self.high_score = 0
+			self.orig_high_score = self.high_score
 
 	def newmob(self, x, y):
-		self.enemy = Mob(x, y, 'mob', 100,  g)
+		self.enemy = Mob(x, y, "samroy", 100,  g)
 		self.all_sprites.add(self.enemy)
 		self.mobs.add(self.enemy)
 
@@ -179,7 +152,7 @@ class Game(object):
 			self.powerups.empty()
 			if len(self.bosses) > 0:
 				self.boss.kill()
-				self.boss_sound.fadeout(1500)
+				self.boss.sound.fadeout(1500)
 			self.game_level += 1
 			#Player animation
 			#if len(self.player_group) == 2:
@@ -219,7 +192,6 @@ class Game(object):
 				self.boss = Boss(g)
 				self.all_sprites.add(self.boss)
 				self.bosses.add(self.boss)
-				self.boss_sound.play(-1)
 
 	def enemy_hit(self, enemy, score_amm, bulletlist, check_group_type):
 		hits = pg.sprite.groupcollide(enemy, bulletlist, True, True)
@@ -233,20 +205,18 @@ class Game(object):
 				if self.p1score > self.high_score: #Update high score
 					self.high_score = self.p1score
 			if check_group_type: #Bool value for checking the right group
-				self.boss_sound.stop()
-				random.choice(self.expl_sounds).play()
+				self.boss.sound.stop()
 				if random.random() >= 0.7:
 					self.powerup = PowerUp(hit.rect.center, 'boss', g)
 					self.all_sprites.add(self.powerup)
 					self.powerups.add(self.powerup)
-				self.expl = Explosion(hit.rect.center, 'boss', 0, g)
+				self.expl = Explosion(hit.rect.center, 'boss', 0, g, "boss")
 			else:
-				self.normal_expl_sound.play()
 				if random.random() >= 0.9:
 					self.powerup = PowerUp(hit.rect.center, 'norm', g)
 					self.all_sprites.add(self.powerup)
 					self.powerups.add(self.powerup)
-				self.expl = Explosion(hit.rect.center, 'lg', 24, g)
+				self.expl = Explosion(hit.rect.center, 'lg', 24, g, "mob")
 			self.all_sprites.add(self.expl)
 
 
@@ -256,23 +226,24 @@ class Game(object):
 		Bmobs_y_list = [100, 166]
 		for ypos in Bmobs_y_list:
 			for i in range(10):
-				self.bigenemy = Mob(((i+1)*70)-15, ypos, 'Bmob', 50,  g)
+				self.bigenemy = Mob(((i+1)*70)-15, ypos, "ep", 50,  g)
 				self.all_sprites.add(self.bigenemy)
 				self.Bmobs.add(self.bigenemy)
 		mob_y_list = [227, 297, 367]
 		for ypos in mob_y_list:
 			for i in range (10):
 				self.newmob(((i+1)*70)-15, ypos)
-
+				
+	"""Put this section into the poweup sprite update"""
 	def powerup_collect(self, player):
 		hits = pg.sprite.spritecollide(player, self.powerups, True)
 		for hit in hits:
-			if hit.image == self.powerup.powerup_images['norm'][0]: #increase the guns
-				self.powerup_sounds[0].play()
+			if hit.image == self.resource_manager.get_sprite_image("powerup_norm1"): #increase the guns
+				self.resource_manager.get_sound("powerup_gun_sound").play()
 				player.powerup()
 
-			if hit.image == self.powerup.powerup_images['norm'][1]: #increase the shields
-				self.powerup_sounds[1].play()
+			if hit.image == self.resource_manager.get_sprite_image("powerup_norm2"):  # increase the shields
+				self.resource_manager.get_sound("powerup_shield_sound").play()
 				#stop the shield decreasing for a short time and add moving shield
 				player.shieldup()
 				# if player.shield < 100:
@@ -280,15 +251,15 @@ class Game(object):
 				# 	if player.shield > 100:
 				# 		player.shield = 100
 
-			if hit.image == self.powerup.powerup_images['boss'][0]:
+			if hit.image == self.resource_manager.get_sprite_image("powerup_boss1"):
 				#give an extra life if lives are less than three
-				self.powerup_sounds[2].play()
+				self.resource_manager.get_sound("powerup_life_sound").play()
 				if player.lives < 3:
 					player.lives += 1
 
-			if hit.image == self.powerup.powerup_images['boss'][1]:
+			if hit.image == self.resource_manager.get_sprite_image("powerup_boss2"):
 				#starts the hyperspace level
-				self.powerup_sounds[3].play()
+				self.resource_manager.get_sound("powerup_hyperspace_sound").play()
 				# self.hyperspace()
 
 	def draw_shields(self, surf, x, y, shield_amm):
@@ -303,22 +274,23 @@ class Game(object):
 		pg.draw.rect(surf, const.WHITE, self.outline_rect, 1)
 
 	def player_death(self, hit, player):
-		self.expl = Explosion(hit, 'boss', 100, g)
-		self.all_sprites.add(self.expl)
 		if len(self.player_group) == 2:
+			self.expl = Explosion(hit, "boss", 100, g, "boss")
+			self.all_sprites.add(self.expl)
 			#check to see if both player are dead
 			player.kill()
 		else:
+			self.expl = Explosion(hit, "boss", 100, g, "death")
+			self.all_sprites.add(self.expl)
 			#removes all the bullets after player death
 			for bullet in self.mob_bullets.sprites():
 				bullet.kill()
 			self.mob_bullets.empty()
 			self.powerups.empty()
 			pg.mixer.music.fadeout(2000)
-			self.enemy_sounds[0].stop()
-			self.enemy_sounds[3].stop()
-			self.death_explosion.play()
-			self.boss_sound.fadeout(2000)
+			# self.enemy_sounds[0].stop()
+			# self.enemy_sounds[3].stop()
+			self.boss.sound.fadeout(2000)
 			player.kill()
 		try:
 			if player == self.player2:
@@ -362,7 +334,7 @@ class Game(object):
 		#Check to see if a bullet has hit the player
 		hits = pg.sprite.spritecollide(player, self.mob_bullets, True)
 		for hit in hits:
-			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g)
+			self.expl = Explosion((hit.rect.x, hit.rect.y), 'sm', 25, g, "boss")
 			self.all_sprites.add(self.expl)
 			#activate moving sheild if shield powerup is still active
 			if player.active_shield == True:
@@ -400,29 +372,29 @@ class Game(object):
 			if not self.expl.alive():
 				self.playing = False
 
-	def pause(self):
-		count = 0
-		pause = True
-		while pause:
-			self.win.blit(self.background_scaled, self.background_rect)
-			#display pause writing
-			if count <= 300:
-				self.win.blit(self.paused_img, (const.SCREENWIDTH / 2 - self.paused_img_rect.width / 2, const.SCREENHEIGHT / 2))
-				#self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=const.SCREENHEIGHT / 2, pos=1)
-			if count >= 600:
-				count = 0
-			count += 1
-			pg.display.update()
-			#unpause
-			for event in pg.event.get():
-				if event.type == pg.KEYDOWN:
-					if event.key == pg.K_p:
-						pause = False
-				try:
-					if self.joystick.get_button(9):
-						pause = False
-				except AttributeError:
-					pass
+	# def pause(self):
+	# 	count = 0
+	# 	pause = True
+	# 	while pause:
+	# 		self.win.blit(self.background_scaled, self.background_rect)
+	# 		#display pause writing
+	# 		if count <= 300:
+	# 			self.win.blit(self.paused_img, (const.SCREENWIDTH / 2 - self.paused_img_rect.width / 2, const.SCREENHEIGHT / 2))
+	# 			#self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=const.SCREENHEIGHT / 2, pos=1)
+	# 		if count >= 600:
+	# 			count = 0
+	# 		count += 1
+	# 		pg.display.update()
+	# 		#unpause
+	# 		for event in pg.event.get():
+	# 			if event.type == pg.KEYDOWN:
+	# 				if event.key == pg.K_p:
+	# 					pause = False
+	# 			try:
+	# 				if self.joystick.get_button(9):
+	# 					pause = False
+	# 			except AttributeError:
+	# 				pass
 
 	def new(self):
 		#Start a new game
@@ -549,7 +521,8 @@ class Game(object):
 					self.game_on = False
 					self.waiting = False
 				if event.key == pg.K_p:
-					self.pause()
+					self.pause = pause.Pause(g)
+					self.pause.show()
 			try:
 				if self.joystick1.get_button(8) or self.joystick2.get_button(6): #exit game
 					if self.playing:
@@ -564,170 +537,33 @@ class Game(object):
 
 	def draw(self):
 		#Game loop - draw
-		self.win.blit(self.background_scaled, self.background_rect)
+		self.win.blit(self.background, self.background_rect)
 		if self.number_of_players == 2:
-			const.draw_text(surf=self.win, text=str(self.p2score), size=22, x=557, y=2, pos=0)
+			meth.draw_text(surf=self.win, text=str(self.p2score), size=22, x=557, y=2, pos=0)
 			self.draw_shields(surf=self.win, x=608, y=8, shield_amm=self.player2.shield)
 			self.draw_lives(surf=self.win, x=720, y=3, player=self.player2)
-		const.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
-		const.draw_text(surf=self.win, text=str(self.high_score), size=18, x=const.SCREENWIDTH/2, y=4, pos=1)
+		meth.draw_text(surf=self.win, text=str(self.p1score), size=22, x=112, y=2, pos=0)
+		meth.draw_text(surf=self.win, text=str(self.high_score), size=18, x=const.SCREENWIDTH/2, y=4, pos=1)
 		self.draw_shields(surf=self.win, x=166, y=8, shield_amm=self.player1.shield)
 		self.draw_lives(surf=self.win, x=278, y=3, player=self.player1)
 		self.all_sprites.draw(self.win)
 		pg.display.update()
 
-	def show_start_screen(self):
-		if self.start_screen_pass:
-			pass
-		else:
-			self.number_of_players = 0
-			self.p1 = False
-			self.p2 = False
-			with change_dir('snd'): #set music
-				pg.mixer.music.load('through space.ogg')
-			pg.mixer.music.set_volume(1.0)
-			pg.mixer.music.play(loops=-1)
-			#Add mobs to show
-			self.start_mobs = pg.sprite.Group()
-			self.start_enemy = StartMob(187, 471, 'mob', 100,  g)
-			self.start_benemy = StartMob(319, 471, 'Bmob', 50,  g)
-			#add button sprites
-			self.player_buttons = StartButtons(game=g)
-			#self.player_two_button = StartButtons(button_type=2, button_center=(489, 710), game=g)
-			#add to group
-			self.start_mobs.add(self.start_enemy)
-			self.start_mobs.add(self.start_benemy)
-			self.start_mobs.add(self.player_buttons)
-			#self.start_mobs.add(self.player_two_button)
-			#Game start screen
-			s = True
-			while s:
-				#start loop - events
-				for event in pg.event.get():#exit loop
-					if event.type == pg.QUIT:
-							self.game_on = False
-							s = False
-					elif event.type == pg.KEYDOWN:
-						if event.key == pg.K_1:
-							if self.number_of_players == 1:
-								self.number_of_players = 0
-								self.p1 = False
-							elif self.number_of_players == 2:
-								self.p1 = True
-							elif self.number_of_players == 2 and self.p1 == True:
-								self.p1 = False
-							else:
-								self.number_of_players = 1
-								self.count = 0
-								self.p1 = True
-						if event.key == pg.K_2 and self.player_buttons.image == self.player_buttons.buttons[1]:
-							if self.number_of_players == 2:
-								self.number_of_players = 1
-								self.p2 = False
-							else:
-								self.number_of_players = 2
-								self.p2 = True
-								self.count = 0
-						if event.key == pg.K_RETURN:
-							if self.player_buttons.image == self.player_buttons.buttons[1] and self.p1 == True and self.p2 == True or self.player_buttons.image == self.player_buttons.buttons[0] and self.p1 == True:
-								s = False
-								self.start_mobs.empty()
-					try:
-						if self.joystick1.get_button(9): #Player 1 start button
-							if self.number_of_players == 1:
-								self.number_of_players = 0
-								self.p1 = False
-							elif self.number_of_players == 2:
-								self.p1 = True
-							elif self.number_of_players == 2 and self.p1 == True:
-								self.p1 = False
-							else:
-								self.number_of_players = 1
-								self.count = 0
-								self.p1 = True
-						if self.joystick2.get_button(7) and self.player_buttons.image == self.player_buttons.buttons[1]: #Player 2 start button
-							if self.number_of_players == 2:
-								self.number_of_players = 1
-								self.p2 = False
-							else:
-								self.number_of_players = 2
-								self.p2 = True
-								self.count = 0
-						if self.joystick1.get_button(2) or self.joystick2.get_button(0):
-							if self.player_buttons.image == self.player_buttons.buttons[1] and self.p1 == True and self.p2 == True or self.player_buttons.image == self.player_buttons.buttons[0] and self.p1 == True:
-								s = False
-								self.start_mobs.empty()
-					except AttributeError:
-						pass
-				self.start_mobs.update()
-				self.win.blit(self.start_background_scaled, self.background_rect)
-				#draw player images
-				if self.number_of_players == 2 and self.p1 == True:
-					self.win.blit(self.player_one_img, (46, 607))
-					self.win.blit(self.player_two_img, (506, 607))
-				if self.number_of_players == 2 and self.p1 !=True:
-					self.win.blit(self.player_two_img, (506, 607))
-				if self.number_of_players == 1 and self.p1 == True:
-					self.win.blit(self.player_one_img, (46, 607))
-				if self.number_of_players != 0: #draw press start text
-					if self.count <= 200:
-						self.win.blit(self.press_start_img, (const.SCREENWIDTH / 2 - self.press_start_img_rect.width / 2, 330))
-					if self.count >= 400:
-						self.count = 0
-					self.count += 1
-
-				self.start_mobs.draw(self.win)
-				pg.display.update()
-
-	def show_go_screen(self):
-		#save high score
-		const.write_high_score(str(self.high_score))
-		#Game over/continue screen
-		self.win.blit(self.go_background_scaled, self.background_rect)
-		#Draw score
-		if self.number_of_players == 2:
-			const.draw_text(surf=self.win, text=f"Player 2: {self.p2score}", size=38, x=400, y=535, pos=1)
-		const.draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
-		pg.mixer.music.fadeout(2000)
-		while self.waiting:
-			self.clock.tick(const.FPS)
-
-			for event in pg.event.get():#exit loop
-				if event.type == pg.QUIT:
-					self.waiting = False
-					self.game_on = False
-				if event.type == pg.KEYDOWN:
-					if event.key == pg.K_ESCAPE: #Return to start screen
-						self.waiting = False
-				if event.type == pg.KEYUP:
-					if event.key == pg.K_y: #Continue
-						self.waiting = False
-						self.start_screen_pass = True
-				try:
-					for joystick in self.joystick_list:
-						if self.joystick.get_button(8) or self.joystick.get_button(6): #Select button to return to start screen
-							self.waiting = False
-						if self.joystick.get_button(9) or self.joystick.get_button(7): #Play button to continue
-							self.waiting = False
-							self.start_screen_pass = True
-				except AttributeError:
-					pass
-
-			pg.display.update()
-
 print(sys.executable)
 
 if __name__ == '__main__':
-	print("Author:", __author__)
-	print("App version:", __version__)
+	print("Author:", const.__AUTHOR__)
+	print("App version:", const.__VERSION__)
 
 	g = Game()
 	while g.game_on:
-		g.show_start_screen()
+		start_screen = start.StartScreen(g)
+		start_screen.show()
 		if g.game_on == False:
 			break
 		g.new()
-		g.show_go_screen()
+		game_over_screen = GameOverScreen(g)
+		game_over_screen.show()
 
 
 	pg.quit()
