@@ -30,7 +30,7 @@ class Player1(pg.sprite.Sprite):
 		self.image = self.game.resource_manager.get_sprite_image("player1")
 		self.rect = self.image.get_rect()
 		self.rect.centerx = xpos
-		self.rect.bottom = meth.SCREENHEIGHT - 6
+		self.rect.bottom = const.SCREENHEIGHT - 6
 		self.shoot_sound = pg.mixer.Sound(
 			self.game.resource_manager.get_sound("shoot_sound"))
 		self.shoot_sound.set_volume(0.04)
@@ -74,24 +74,24 @@ class Player1(pg.sprite.Sprite):
 		self.screen_edge_check()
 
 	def screen_edge_check(self):
-		if self.rect.right > meth.SCREENWIDTH:
-			self.rect.right = meth.SCREENWIDTH
+		if self.rect.right > const.SCREENWIDTH:
+			self.rect.right = const.SCREENWIDTH
 		if self.rect.left < 0:
 			self.rect.left = 0
 
 	def player_hidden_check(self):
 		if self.hidden and pg.time.get_ticks() - self.hide_timer > 1000:
 			self.hidden = False
-			self.rect.centerx = meth.SCREENWIDTH / 2
-			self.rect.bottom = meth.SCREENHEIGHT - 6
+			self.rect.centerx = const.SCREENWIDTH / 2
+			self.rect.bottom = const.SCREENHEIGHT - 6
 
 	def shield_timeout_check(self):
-		if self.active_shield == True and pg.time.get_ticks() - self.active_shield_time > meth.POWERUP_TIME:
+		if self.active_shield == True and pg.time.get_ticks() - self.active_shield_time > const.POWERUP_TIME:
 			self.active_shield = False
 			self.power_time = pg.time.get_ticks()
 
 	def	powerup_timeout_check(self):
-		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > meth.POWERUP_TIME:
+		if self.power_level >= 2 and pg.time.get_ticks() - self.power_time > const.POWERUP_TIME:
 			self.power_level -= 1
 			self.power_time = pg.time.get_ticks()
 
@@ -127,7 +127,7 @@ class Player1(pg.sprite.Sprite):
 	def hide(self):
 		self.hidden = True
 		self.hide_timer = pg.time.get_ticks()
-		self.rect.center = (meth.SCREENWIDTH / 2, meth.SCREENHEIGHT + 200)
+		self.rect.center = (const.SCREENWIDTH / 2, const.SCREENHEIGHT + 200)
 
 	def move_to_center_anim(self, xpos):
 		#move the player to the middle x
@@ -138,7 +138,7 @@ class Player1(pg.sprite.Sprite):
 
 	def blastoff_anim(self):
 		#Move the player half way up the screen
-		if self.rect.top > meth.SCREENHEIGHT/2:
+		if self.rect.top > const.SCREENHEIGHT/2:
 			self.rect.top -= 1
 
 	def death_check(self, hit):
@@ -171,8 +171,8 @@ class Player2(Player1):
 
 		self.rect.x += self.speedx
 		"""Check if works from player 1 code"""
-		# if self.rect.right > meth.SCREENWIDTH:
-		# 	self.rect.right = meth.SCREENWIDTH
+		# if self.rect.right > const.SCREENWIDTH:
+		# 	self.rect.right = const.SCREENWIDTH
 		# if self.rect.left < 0:
 		# 	self.rect.left = 0
 
@@ -208,7 +208,7 @@ class MobBullet(Player1Bullet):
 
 	def update(self):
 		self.rect.y += self.speedy
-		if self.rect.top > meth.SCREENHEIGHT:
+		if self.rect.top > const.SCREENHEIGHT:
 			self.kill()	
 
 class Mob(pg.sprite.Sprite):
@@ -221,8 +221,6 @@ class Mob(pg.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.x = x
 		self.rect.y = y
-		#self.speedx = 5
-		#self.direction = True
 		self.frame = 1
 		self.move_last_update = pg.time.get_ticks()
 		self.frame_rate = frame_rate
@@ -242,12 +240,13 @@ class Mob(pg.sprite.Sprite):
 
 		#Move mob
 		move_now = pg.time.get_ticks()
-		if move_now - self.move_last_update > self.game.move_delay:
+		if move_now - self.move_last_update > self.game.enemy_checks.move_delay:
 			self.move_last_update = move_now
-			if self.game.mob_direction:
-				self.rect.x += self.game.speedx
+			# if self.game.mob_direction:
+			if self.game.enemy_checks.mob_direction: #Checks direction of mobs from CheckEnemy class
+				self.rect.x += self.game.enemy_checks.speedx
 			else:
-				self.rect.x -= self.game.speedx
+				self.rect.x -= self.game.enemy_checks.speedx
 
 			#Spawn a bullet
 			if len(self.game.player_group) > 0:
@@ -286,10 +285,12 @@ class Boss(pg.sprite.Sprite):
 		self. game = game
 		self.image = self.game.resource_manager.get_sprite_image("boss")
 		self.rect = self.image.get_rect()
-		self.rect.x = meth.SCREENWIDTH + 1
+		self.rect.x = const.SCREENWIDTH + 1
 		self.rect.y = 28
 		self.sound = self.game.resource_manager.get_sound("boss_enemy_sound")
-		self.sound.play(-1)
+		self.sound.set_volume(0.2)
+		self.channel = pg.mixer.Channel(0)
+		self.channel.play(self.sound, -1)
 		self.speedx = 2
 
 	def update(self):
@@ -331,8 +332,8 @@ class HyperMob(Mob):
 		self.rotate()
 		self.rect.x += self.speedx
 		self.rect.y += self.speedy
-		if self.rect.top > meth.SCREENHEIGHT + 10 or self.rect.left < -25 or self.rect.right > meth.SCREENWIDTH + 20:
-			self.rect.x = random.randrange(meth.SCREENWIDTH - self.rect.width)
+		if self.rect.top > const.SCREENHEIGHT + 10 or self.rect.left < -25 or self.rect.right > const.SCREENWIDTH + 20:
+			self.rect.x = random.randrange(const.SCREENWIDTH - self.rect.width)
 			self.rect.y = random.randrange(-100,-40)
 			self.speedy = random.randrange(1,8)
 
@@ -348,8 +349,42 @@ class PowerUp(pg.sprite.Sprite):
 
 	def update(self):
 		self.rect.y += self.speedy
-		if self.rect.top >= meth.SCREENHEIGHT + 1:
+		if self.rect.top >= const.SCREENHEIGHT + 1:
 			self.kill()
+
+		# Check for powerup collect
+		hit = pg.sprite.collide_circle(self, self.game.player1)
+		if hit:
+			self.powerup_collect(self.game.player1)
+
+		if self.game.number_of_players == 2:
+			hit = pg.sprite.collide_circle(self, self.game.player2)
+			if hit:
+				self.powerup_collect(self.game.player2)
+			
+	def powerup_collect(self, player):
+		#Extra guns
+		if self.image == self.game.resource_manager.get_sprite_image("powerup_norm1"):
+			self.game.resource_manager.get_sound("powerup_gun_sound").play()
+			player.powerup()
+
+		#Extra shield
+		if self.image == self.game.resource_manager.get_sprite_image("powerup_norm2"):
+			self.game.resource_manager.get_sound("powerup_shield_sound").play()
+			player.shieldup()
+
+		#Extra life
+		if self.image == self.game.resource_manager.get_sprite_image("powerup_boss1"):
+			self.game.resource_manager.get_sound("powerup_life_sound").play()
+			if player.lives < 3:
+				player.lives += 1
+		
+		#Starts hyperspace
+		if self.image == self.game.resource_manager.get_sprite_image("powerup_boss2"):
+			self.game.resource_manager.get_sound("powerup_hyperspace_sound").play()
+			# self.game.hyperspace() 
+
+		self.kill()
 
 class Explosion(pg.sprite.Sprite):
 	def __init__(self, center, img_type, fr_rate, game, snd_type):
@@ -399,7 +434,7 @@ class Shield1(pg.sprite.Sprite):
 		self.image = self.game.resource_manager.get_sprite_image("shield1")
 		self.rect = self.image.get_rect()
 		self.rect.centerx = xpos
-		self.rect.bottom = meth.SCREENHEIGHT - 6
+		self.rect.bottom = const.SCREENHEIGHT - 6
 		self.frame = 1
 		self.frame_rate = 36
 		self.last_update = pg.time.get_ticks()
@@ -416,7 +451,7 @@ class Shield1(pg.sprite.Sprite):
 			self.frame += 1
 		self.rect = self.image.get_rect()
 		self.rect.centerx = self.game.player1.rect.centerx
-		self.rect.bottom = meth.SCREENHEIGHT - 6
+		self.rect.bottom = const.SCREENHEIGHT - 6
 
 class Shield2(Shield1):
 	"""docstring for Shield2"""
@@ -434,5 +469,5 @@ class Shield2(Shield1):
 			self.frame += 1
 		self.rect = self.image.get_rect()
 		self.rect.centerx = self.game.player2.rect.centerx
-		self.rect.bottom = meth.SCREENHEIGHT - 6		
+		self.rect.bottom = const.SCREENHEIGHT - 6		
 

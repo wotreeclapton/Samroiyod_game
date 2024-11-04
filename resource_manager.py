@@ -269,3 +269,19 @@ class ResourceManager:
 
 		for name, filename in music_data:
 			self.load_music(name, filename)
+
+def load_high_score():
+	try:
+		with open(path.join(const.RESOURCES_FOLDER, "high_score.bat"), "r") as h_score_file:
+			high_score = int(h_score_file.read())
+	except FileNotFoundError:
+		high_score = 0
+
+	return high_score
+
+def write_high_score(score):  # write the high score to BAT file
+	try:
+		with open(path.join(const.RESOURCES_FOLDER, "high_score.bat"), 'w') as h_score_file:
+			h_score_file.write(score)
+	except pg.error as e:
+		print(f"{e}: Could not save high score to file")

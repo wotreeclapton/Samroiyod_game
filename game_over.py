@@ -8,7 +8,7 @@
 """
 
 import pygame as pg
-import methods as meth
+from resource_manager import write_high_score
 
 
 class GameOverScreen:
@@ -19,7 +19,7 @@ class GameOverScreen:
 
 		self.load_resources()
 		# save high score
-		meth.write_high_score(str(self.game.high_score))
+		write_high_score(str(self.game.high_score))
 
 	def load_resources(self):
 		self.background = self.game.resource_manager.get_image("gameover_screen")

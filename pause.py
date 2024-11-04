@@ -18,12 +18,16 @@ class Pause:
 		self.pause_img = PauseQuest(self.game, const.SCREENWIDTH / 2, const.SCREENHEIGHT / 2)
 		self.pause_mobs.add(self.pause_img)
 		self.pause = True
+		if self.game.boss is not None: #Pause the boss sound if boss exists
+			self.game.boss.channel.pause()
 
 	def handle_events(self):
 		for event in pg.event.get():
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_p:
 					self.pause = False
+					if self.game.boss is not None:
+						self.game.boss.channel.unpause()
 			# try:
 			# 	if self.joystick.get_button(9):
 			# 		self.pause = False
