@@ -9,16 +9,15 @@
 import pygame as pg
 import constants as const
 from sprites import StartMob
+from game_state import GameState
 
-
-class StartScreen:
+class StartScreen(GameState):
 	def __init__(self, game):
+		super().__init__(game)
 		#Start Screen class to handle all start options
 		self.game = game
 		self.running = True
 		# self.number_of_players = 0
-		self.player1 = False
-		self.player2 = False
 		self.players = [False, False]
 		self.player_checked = False
 		self.load_resources()
@@ -48,16 +47,14 @@ class StartScreen:
 		self.start_mobs.add(self.player1_button)
 		self.start_mobs.add(self.player2_button)
 
-	def handle_events(self):
+	def handle_events(self, events):
 		#Handles player input, including keyboard and quitting events.
-		for event in pg.event.get():  # exit loop
+		for event in events:  # exit loop
 			if event.type == pg.QUIT:
-				self.game.game_on = False
-				self.running = False
+				self.game.quit()
 			elif event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
-					self.running = False
-					self.game.game_on = False
+					self.game.quit()
 				elif event.key in {pg.K_1, pg.K_2, pg.K_RETURN}:
 					self.check_keyboard_inputs(event)
 				
@@ -85,39 +82,40 @@ class StartScreen:
 		#code to start game after player select
 		if event.key == pg.K_RETURN:
 			if self.game.number_of_players > 0:
-				self.running = False
-				self.start_mobs.empty()
+				# self.running = False
+				# self.start_mobs.empty() #Check this later
+				self.game.change_state("play")
 
-	# def check_joystick(self):
-	# 	try:
-	# 		if self.joystick1.get_button(9):  # Player 1 start button
-	# 			if self.number_of_players == 1:
-	# 				self.number_of_players = 0
-	# 				self.p1 = False
-	# 			elif self.number_of_players == 2:
-	# 				self.p1 = True
-	# 			elif self.number_of_players == 2 and self.p1 == True:
-	# 				self.p1 = False
-	# 			else:
-	# 				self.number_of_players = 1
-	# 				self.count = 0
-	# 				self.p1 = True
+	def check_joystick(self):
+		try:
+			if self.game.joystick1.get_button(9):  # Player 1 start button
+				if self.number_of_players == 1:
+					self.number_of_players = 0
+					self.p1 = False
+				elif self.number_of_players == 2:
+					self.p1 = True
+				elif self.number_of_players == 2 and self.p1 == True:
+					self.p1 = False
+				else:
+					self.number_of_players = 1
+					self.count = 0
+					self.p1 = True
 					
-	# 		# Player 2 start button
-	# 		if self.joystick2.get_button(7) and self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2"):
-	# 			if self.number_of_players == 2:
-	# 				self.number_of_players = 1
-	# 				self.p2 = False
-	# 			else:
-	# 				self.number_of_players = 2
-	# 				self.p2 = True
-	# 				self.count = 0
-	# 		if self.joystick1.get_button(2) or self.joystick2.get_button(0):
-	# 			if self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2") and self.p1 == True and self.p2 == True or self.player_buttons.image == self.resource_manager.get_sprite_image("start_button1") and self.p1 == True:
-	# 				s = False
-	# 				self.start_mobs.empty()
-	# 	except AttributeError:
-	# 		pass
+			# Player 2 start button
+			if self.game.joystick2.get_button(7) and self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2"):
+				if self.number_of_players == 2:
+					self.number_of_players = 1
+					self.p2 = False
+				else:
+					self.number_of_players = 2
+					self.p2 = True
+					self.count = 0
+			if self.game.joystick1.get_button(2) or self.game.joystick2.get_button(0):
+				if self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2") and self.p1 == True and self.p2 == True or self.player_buttons.image == self.resource_manager.get_sprite_image("start_button1") and self.p1 == True:
+					s = False
+					self.start_mobs.empty()
+		except AttributeError:
+			pass
 
 	def update(self):
 		self.start_mobs.update()
@@ -135,12 +133,6 @@ class StartScreen:
 
 		self.start_mobs.draw(self.game.win)
 		pg.display.update()
-
-	def show(self):
-		while self.running:
-			self.handle_events()
-			self.update()
-			self.draw()
 
 
 class StartQuest(pg.sprite.Sprite):

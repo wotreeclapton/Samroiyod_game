@@ -46,14 +46,14 @@ def draw_lives(surf, x, y, player):
 	for i in range(player.lives):
 		surf.blit(player_image_resized, (x + (i * 25), y))
 
-def new_high_score_check(game):
+def new_high_score_check(game, sound):
 	# play high score sound
 	if game.number_of_players == 2:
 		if not game.played_high_score_sound and game.p2score > game.orig_high_score:
-			game.high_score_sound.play()
+			sound.play()
 			game.played_high_score_sound = True
 	if not game.played_high_score_sound and game.p1score > game.orig_high_score:
-		game.high_score_sound.play()
+		sound.play()
 		game.played_high_score_sound = True
 
 

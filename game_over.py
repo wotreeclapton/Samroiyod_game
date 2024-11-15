@@ -9,13 +9,14 @@
 
 import pygame as pg
 from resource_manager import write_high_score
+from game_state import GameState
 
 
-class GameOverScreen:
+class GameOverScreen(GameState):
 	def __init__(self, game):
+		super().__init__(game)
 		# Game over Screen class to handle all start options
 		self.game = game
-		self.running = True
 
 		self.load_resources()
 		# save high score
@@ -25,18 +26,16 @@ class GameOverScreen:
 		self.background = self.game.resource_manager.get_image("gameover_screen")
 		self.background_rect = self.background.get_rect()
 
-	def handle_events(self):
+	def handle_events(self, events):
 		# self.clock.tick(const.FPS)
-		for event in pg.event.get():  # exit loop
+		for event in events:  # exit loop
 			if event.type == pg.QUIT:
-				self.running = False
-				self.game.game_on = False
+				self.game.quit()
 			if event.type == pg.KEYDOWN:
 				if event.key == pg.K_ESCAPE:
-					self.running = False
-					self.game.game_on = False
+					self.game.quit()
 				else:
-					self.running = False #return to start screen
+					self.game.change_state("start")
 
 			# if event.type == pg.KEYUP:
 			# 	if event.key == pg.K_y:  # Continue
@@ -66,8 +65,3 @@ class GameOverScreen:
 		# 	meth.draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
 		# 	pg.mixer.music.fadeout(2000)
 
-	def show(self):
-		while self.running:
-			self.handle_events()
-			self.update()
-			self.draw()

@@ -9,56 +9,45 @@
 
 import pygame as pg
 import constants as const
+from game_state import GameState
 
-class Pause:
-	def __init__(self, game) -> None:
+class PauseScreen(GameState):
+	def __init__(self, game):
+		super().__init__(game)
 		#Pause screen class to handle in game pausing
 		self.game = game
 		self.pause_mobs = pg.sprite.Group()
 		self.pause_img = PauseQuest(self.game, const.SCREENWIDTH / 2, const.SCREENHEIGHT / 2)
 		self.pause_mobs.add(self.pause_img)
-		self.pause = True
-		if self.game.boss is not None: #Pause the boss sound if boss exists
-			self.game.boss.channel.pause()
+		self.background = self.game.resource_manager.get_image("game_screen")
+		self.background_rect = self.background.get_rect()
 
-	def handle_events(self):
-		for event in pg.event.get():
+	def handle_events(self, events):
+		for event in events:
+			if event.type == pg.QUIT:
+				self.game.quit()			
 			if event.type == pg.KEYDOWN:
+				if event.key == pg.K_ESCAPE:
+					self.game.quit()
 				if event.key == pg.K_p:
-					self.pause = False
 					if self.game.boss is not None:
 						self.game.boss.channel.unpause()
-			# try:
-			# 	if self.joystick.get_button(9):
-			# 		self.pause = False
-			# except AttributeError:
-			# 	pass
+					self.game.change_state("play")
+			try:
+				if self.game.joystick1.get_button(9) or self.game.joystick2.get_button(7):
+					if self.game.boss is not None:
+						self.game.boss.channel.unpause()
+					self.game.change_state("play")
+			except AttributeError:
+				pass
 
 	def update(self):
 		self.pause_mobs.update()
 
 	def draw(self):
-		self.game.win.blit(self.game.background, self.game.background_rect)#
+		self.game.win.blit(self.background, self.background_rect)#
 		self.pause_mobs.draw(self.game.win)
 		pg.display.update()
-
-	def show(self):
-		while self.pause:
-			self.handle_events()
-			self.update()
-			self.draw()
-
-			
-			# display pause writing
-			# if count <= 300:
-				# self.win.blit(self.paused_img, (const.SCREENWIDTH / 2 -
-				#               self.paused_img_rect.width / 2, const.SCREENHEIGHT / 2))
-				# self.draw_text(surf=self.win, text="Paused", size=68, x=400, y=const.SCREENHEIGHT / 2, pos=1)
-			# if count >= 600:
-			# 	count = 0
-			# count += 1
-			
-			# unpause
 
 
 class PauseQuest(pg.sprite.Sprite):

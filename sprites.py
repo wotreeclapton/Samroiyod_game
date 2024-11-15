@@ -23,9 +23,10 @@ class Spritesheet:
 		image.blit(self.spritesheet, (0,0), (x, y, width, height))
 		return image
 
+
 class Player1(pg.sprite.Sprite):
 	def __init__(self, xpos , game):
-		pg.sprite.Sprite.__init__(self)
+		super().__init__()
 		self.game = game
 		self.image = self.game.resource_manager.get_sprite_image("player1")
 		self.rect = self.image.get_rect()
@@ -129,20 +130,9 @@ class Player1(pg.sprite.Sprite):
 		self.hide_timer = pg.time.get_ticks()
 		self.rect.center = (const.SCREENWIDTH / 2, const.SCREENHEIGHT + 200)
 
-	def move_to_center_anim(self, xpos):
-		#move the player to the middle x
-		if self.rect.centerx < xpos:
-			self.rect.centerx += 1
-		elif self.rect.centerx > xpos:
-			self.rect.centerx -= 1
-
-	def blastoff_anim(self):
-		#Move the player half way up the screen
-		if self.rect.top > const.SCREENHEIGHT/2:
-			self.rect.top -= 1
-
 	def death_check(self, hit):
 		self.expl = Explosion(hit, "boss", 100, self.game)
+
 
 class Player2(Player1):
 	"""docstring for Player2"""
@@ -175,6 +165,47 @@ class Player2(Player1):
 		# 	self.rect.right = const.SCREENWIDTH
 		# if self.rect.left < 0:
 		# 	self.rect.left = 0
+
+
+class LevelUpPlayer1(pg.sprite.Sprite):
+	def __init__(self, game):
+		super().__init__()
+		#Player sprite to use in level up animation
+		self.game = game
+		self.image = self.game.resource_manager.get_sprite_image("player1")
+		self.rect = self.image.get_rect()
+		self.rect.centerx  = -40
+		self.rect.bottom = const.SCREENHEIGHT - 6
+		self.end_poss = const.SCREENWIDTH/2
+
+	def update(self):
+		# move the player to the middle x
+		if self.rect.centerx < self.end_poss:
+			self.rect.centerx += 2
+		elif self.rect.centerx > self.end_poss:
+			self.rect.centerx -= 2
+		else:
+			# Move the player half way up the screen
+			if self.rect.top > const.SCREENHEIGHT/2:
+				self.rect.top -= 2
+			else:
+				self.end_poss = const.SCREENWIDTH/2
+				self.rect.bottom = const.SCREENHEIGHT - 6
+				self.game.change_state("play")
+
+
+class LevelUpPlayer2(LevelUpPlayer1):
+	def __init__(self, game):
+		super().__init__(game)
+		#Player sprite to use in level up animation
+		self.game = game
+		self.image = self.game.resource_manager.get_sprite_image("player2")
+		# self.rect = self.image.get_rect()
+		self.rect.centerx = const.SCREENWIDTH + 40
+
+	def update(self):
+		pass
+
 
 class Player1Bullet(pg.sprite.Sprite):
 	def __init__(self, x ,y, game):
