@@ -33,6 +33,7 @@ from sprites import Player1, Player2
 # from hyperspace import hyperspace
 from resource_manager import ResourceManager
 from game_checks import CheckEnemy, CheckPlayer, CheckLevel
+from methods import JoystickHandler
 
 class Game(object):
 	def __init__(self):
@@ -48,7 +49,7 @@ class Game(object):
 		self.sound_last_update = pg.time.get_ticks()
 		self.sound = True
 		self.game_level = 1
-		self.number_of_players = 0
+		self.players = [False, False]
 		self.boss = None #Created first for pause game check
 		self.played_high_score_sound = False
 		self.high_score = 0
@@ -68,7 +69,9 @@ class Game(object):
 		self.load_resources()
 
 	def initialize_joysticks(self):
-		#Initialize available joysticks and handle errors during setup.
+		#Initialize available joysticks and handle errors during setup.\
+		self.joystick1 = None
+		self.joystick2 = None
 		try:
 			total_joysticks = pg.joystick.get_count()
 			self.joystick_list = []
@@ -82,10 +85,15 @@ class Game(object):
 					print(f"Joystick {i} failed to initialize: {e}")
 
 			# Assign joystick attributes if available
-			if total_joysticks >= 1:
+			if total_joysticks == 2:
 				self.joystick1 = self.joystick_list[0]
-			if total_joysticks >= 2:
+				self.joystick_handler1 = JoystickHandler(self.joystick1)
 				self.joystick2 = self.joystick_list[1]
+				self.joystick_handler2 = JoystickHandler(self.joystick2)
+			elif total_joysticks == 1:
+				self.joystick1 = self.joystick_list[0]
+				self.joystick_handler1 = JoystickHandler(self.joystick1)
+
 
 			print(f"{total_joysticks} joystick(s) initialized successfully.")
 		except Exception as e:
@@ -108,7 +116,7 @@ class Game(object):
 
 	def initialize_players(self):
 		# choose 1 or 2 players
-		if self.number_of_players == 2:
+		if all(item is True for item in self.players):
 			self.p2score = 0
 			self.player2 = Player2(xpos=(const.SCREENWIDTH / 3)*2, game=g)
 			self.player_group.add(self.player2)

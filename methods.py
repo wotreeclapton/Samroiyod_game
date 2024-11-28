@@ -48,13 +48,31 @@ def draw_lives(surf, x, y, player):
 
 def new_high_score_check(game, sound):
 	# play high score sound
-	if game.number_of_players == 2:
+	if all(item is True for item in game.players):
 		if not game.played_high_score_sound and game.p2score > game.orig_high_score:
 			sound.play()
 			game.played_high_score_sound = True
 	if not game.played_high_score_sound and game.p1score > game.orig_high_score:
 		sound.play()
 		game.played_high_score_sound = True
+
+
+class JoystickHandler:
+	"""Initialize the JoystickHandler with a joystick object."""
+    def __init__(self, joystick):
+        self.joystick = joystick
+        self.previous_states = [False] * joystick.get_numbuttons()
+
+    def is_button_pressed(self, button_index):
+        """Check if a button was just pressed (debounced)."""
+        if not self.joystick:
+            return False
+
+        current_state = self.joystick.get_button(button_index)
+        was_pressed = current_state and not self.previous_states[button_index]
+        self.previous_states[button_index] = current_state  # Update state
+        return was_pressed
+
 
 
 	# def play_mob_movesound(self):

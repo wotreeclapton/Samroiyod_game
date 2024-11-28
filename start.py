@@ -8,7 +8,7 @@
 """
 import pygame as pg
 import constants as const
-from sprites import StartMob
+from sprites import StartMob, FlashingSprite
 from game_state import GameState
 
 class StartScreen(GameState):
@@ -17,8 +17,6 @@ class StartScreen(GameState):
 		#Start Screen class to handle all start options
 		self.game = game
 		self.running = True
-		# self.number_of_players = 0
-		self.players = [False, False]
 		self.player_checked = False
 		self.load_resources()
 
@@ -53,69 +51,133 @@ class StartScreen(GameState):
 			if event.type == pg.QUIT:
 				self.game.quit()
 			elif event.type == pg.KEYDOWN:
-				if event.key == pg.K_ESCAPE:
-					self.game.quit()
-				elif event.key in {pg.K_1, pg.K_2, pg.K_RETURN}:
-					self.check_keyboard_inputs(event)
-				
-		# self.check_joystick()
+				self._handle_keydown(event)
 
-		if self.game.number_of_players > 0:
+		if self.game.joystick1:
+			self.check_joystick1()
+		if self.game.joystick2:
+			self.check_joystick2()
+
+		if any(self.game.players):
 			if not self.player_checked:
 				self.player_checked = True #set flag to prevent multiple checks
 				self.start_quest = StartQuest(self.game, const.SCREENWIDTH / 2, 330)
 				self.start_mobs.add(self.start_quest)
 				
+	def _handle_keydown(self, event):
+		if event.key == pg.K_ESCAPE:
+			self.game.quit()
+		elif event.key in {pg.K_1, pg.K_2, pg.K_RETURN}:
+			self.check_keyboard_inputs(event)
+
 	def check_keyboard_inputs(self, event):
 		#Checks player choice input
 		if event.key == pg.K_1:
-			if self.game.number_of_players != 1:
-				self.game.number_of_players = 1
-				self.players[0] = True
+			#Both players selected so deselect player 1
+			if all(item is True for item in self.players):
+				self.toggle_player(0, "large", "small")
+			# No players selected so select player 1
+			elif all(item is False for item in self.players):  
+				self.toggle_player(0, "large", "small")
+			# Player 1 already selected so deselect player 1
+			elif self.players[0]:  
+				self.toggle_player(0, "small", "small")
+				# Player 2 selected so player 1 selected
+			elif self.players[1] and not self.players[0]: 
+				self.toggle_player(0, "small", "large")
 
 		if event.key == pg.K_2:
-			if self.game.number_of_players != 2:
-				self.game.number_of_players = 2
-				self.players[0] = True
-				self.players[1] = True
+			# Both players selected so deselect player 2
+			if all(item is True for item in self.players):
+				self.toggle_player(1, "large", "small")
+			# No players selected so select player 2
+			elif all(item is False for item in self.players): 
+				self.toggle_player(1, "large", "small")
+			# Player 2 already selected so deselect player 2
+			elif self.players[1] and not self.players[0]: 
+				self.toggle_player(1, "small", "small")
+			# Player 1 selected and player 2 selected
+			elif self.players[0] and not self.players[1]: 
+				self.toggle_player(1, "small", "large")
 
 		#code to start game after player select
 		if event.key == pg.K_RETURN:
-			if self.game.number_of_players > 0:
-				# self.running = False
+			if any(self.players):
 				# self.start_mobs.empty() #Check this later
 				self.game.change_state("play")
 
-	def check_joystick(self):
+	def check_joystick1(self):
 		try:
-			if self.game.joystick1.get_button(9):  # Player 1 start button
-				if self.number_of_players == 1:
-					self.number_of_players = 0
-					self.p1 = False
-				elif self.number_of_players == 2:
-					self.p1 = True
-				elif self.number_of_players == 2 and self.p1 == True:
-					self.p1 = False
-				else:
-					self.number_of_players = 1
-					self.count = 0
-					self.p1 = True
-					
+			#Select player 1
+			# Player 1 num 3 button
+			if self.game.joystick_handler1.is_button_pressed(2):
+				# No players selected so select player 1
+				if all(item is False for item in self.game.players):  
+					self.toggle_player(0, "large", "small")
+				#Player 2 is selected 
+				elif self.game.players[1] and not self.players[0]:
+					self.toggle_player(0, "small", "large")
+			#Deselect player 1
+			# Player 1 num 4 button
+			if self.game.joystick_handler1.is_button_pressed(3):
+				#Both players selected
+				if all(item is True for item in self.game.players):
+					self.toggle_player(0, "large", "small")	
+				#Player 1 selected		
+				elif self.game.players[0]:
+					self.toggle_player(0, "small", "small")				
+	
+			#Start game
+			# Player 1 start button
+			if self.game.joystick_handler1.is_button_pressed(9):
+				if any(self.game.players):
+					self.game.change_state("play")
+			#exit the game
+			# Player 1 select button
+			if self.game.joystick_handler1.is_button_pressed(8):
+				self.game.quit()			
+		except AttributeError as e:
+			print(f"Joystick error: {e}")
+
+	def check_joystick2(self):
+		try:						
+			#Select player 2
+			# Player 1 num 3 button Select
+			if self.game.joystick_handler2.is_button_pressed(2):
+				# No players selected so select player 1
+				if all(item is False for item in self.game.players):  
+					self.toggle_player(1, "large", "small")
+			#Deselect player 2				
+			# Player 1 num 4 button Deselect
+			if self.game.joystick_handler2.is_button_pressed(3):
+				#Both players selected
+				if all(item is True for item in self.game.players):
+					self.toggle_player(1, "large", "small")
+				#Player 2 selected
+				elif self.game.players[1]:
+					self.toggle_player(1, "small", "small")
+		
+			#Start game
 			# Player 2 start button
-			if self.game.joystick2.get_button(7) and self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2"):
-				if self.number_of_players == 2:
-					self.number_of_players = 1
-					self.p2 = False
-				else:
-					self.number_of_players = 2
-					self.p2 = True
-					self.count = 0
-			if self.game.joystick1.get_button(2) or self.game.joystick2.get_button(0):
-				if self.player_buttons.image == self.resource_manager.get_sprite_image("start_button2") and self.p1 == True and self.p2 == True or self.player_buttons.image == self.resource_manager.get_sprite_image("start_button1") and self.p1 == True:
-					s = False
-					self.start_mobs.empty()
-		except AttributeError:
-			pass
+			if self.game.joystick_handler2.is_button_pressed(9):
+				if any(self.game.players):
+					self.game.change_state("play")
+			#exit the game
+			# Player 2 select button
+			if self.game.joystick_handler2.is_button_pressed(8):
+				self.game.quit()			
+		except AttributeError as e:
+			print(f"Joystick error: {e}")
+
+	def toggle_player(self, player_index, p1button, p2button):
+		"""Toggle the state of a player based on index and pass through the button choice."""
+		self.game.players[player_index] = not self.game.players[player_index]
+		self._update_button_sizes(p1button, p2button)
+
+	def _update_button_sizes(self, p1button, p2button):
+		"""Update button sizes"""
+		self.player1_button.button_size = p1button
+		self.player2_button.button_size = p2button
 
 	def update(self):
 		self.start_mobs.update()
@@ -123,80 +185,39 @@ class StartScreen(GameState):
 	def draw(self):
 		self.game.win.blit(self.background, self.background_rect)
 		# draw player images
-		if self.game.number_of_players == 2 and self.players[0]:
+		if all(item is True for item in self.game.players): #Both players are playing
 			self.game.win.blit(self.player1_start_img, (46, 607))
 			self.game.win.blit(self.player2_start_img, (506, 607))
-		if self.game.number_of_players == 2 and not self.players[0]:
-			self.game.win.blit(self.player2_start_img, (506, 607))
-		if self.game.number_of_players == 1 and self.players[0]:
+		elif self.game.players[0]: #player 1 playing
 			self.game.win.blit(self.player1_start_img, (46, 607))
+		elif self.game.players[1]: #player 2 playing
+			self.game.win.blit(self.player2_start_img, (506, 607))
 
 		self.start_mobs.draw(self.game.win)
 		pg.display.update()
 
 
-class StartQuest(pg.sprite.Sprite):
-	#class to handle flashing start mob
-	def __init__(self, game, x, y):
-		super().__init__()
-		self.game = game
-		self.image = self.game.resource_manager.get_sprite_image("press_to_start")
-		self.original_image = self.image  # Store the original image
-		self.rect = self.image.get_rect()
-		self.transparent_image = pg.Surface((self.rect.width, self.rect.height), pg.SRCALPHA)
-		self.transparent_image.fill((0, 0, 0, 0))  # Transparent surface
-		self.rect.centerx = x
-		self.rect.y = y
-		self.flash_interval = 500
-		self.last_flash_time = pg.time.get_ticks()
-		self.visible = True
-
-	def update(self):
-		current_time = pg.time.get_ticks()
-		if current_time - self.last_flash_time >= self.flash_interval:
-			self.visible = not self.visible
-			self.last_flash_time = current_time
-
-		if self.visible:
-			self.image = self.original_image
-		else:
-			self.image = self.transparent_image
+class StartQuest(FlashingSprite):
+    def __init__(self, game, x, y):
+        image = game.resource_manager.get_sprite_image("press_to_start")
+        rect = image.get_rect(center=(x, y))
+        super().__init__(image, rect)
 
 
 class StartButtons(pg.sprite.Sprite):
 	"""docstring for StartButtons"""
-	def __init__(self, game, button_type, x):
+	def __init__(self, game, player_num, x):
 		pg.sprite.Sprite.__init__(self)
 		self.game = game
-		self.image_type = button_type
-		self.image = f"{self.image_type}up_button_small"
+		self.image_type = player_num
+		self.button_size = "small"
+		self.image = f"{self.image_type}up_button_{self.button_size}"
 		self.image = self.game.resource_manager.get_sprite_image(self.image)
 		self.rect = self.image.get_rect()
 		self.x = x
 		self.rect.center = (self.x, 710)
 
 	def update(self):
-		keystate = pg.key.get_pressed()
-		if keystate[pg.K_1]:
-			if self.image_type == 1:
-				self.image = self.game.resource_manager.get_sprite_image(f"{self.image_type}up_button_large")
-			else:
-				self.image = self.game.resource_manager.get_sprite_image(f"{self.image_type}up_button_small")
-		if keystate[pg.K_2]:
-			if self.image_type == 2:
-				self.image = self.game.resource_manager.get_sprite_image(f"{self.image_type}up_button_large")
-			else:
-				self.image = self.game.resource_manager.get_sprite_image(f"{self.image_type}up_button_small")
-
-		# try:
-		# 	if self.game.joystick1.get_axis(0) > 0 or self.game.joystick2.get_axis(0) > 0:
-		# 		if self.image == self.game.resource_manager.get_sprite_image("start_button1"):
-		# 			self.image = self.game.resource_manager.get_sprite_image("start_button2")
-		# 	if self.game.joystick1.get_axis(0) == -1 or self.game.joystick2.get_axis(0) == -1:
-		# 		if self.image == self.game.resource_manager.get_sprite_image("start_button2"):
-		# 			self.image = self.game.resource_manager.get_sprite_image("start_button1")
-		# except AttributeError:
-		# 	pass
-
+		self.image = self.game.resource_manager.get_sprite_image(f"{self.image_type}up_button_{self.button_size}")
 		self.rect = self.image.get_rect()
 		self.rect.center = (self.x, 710)

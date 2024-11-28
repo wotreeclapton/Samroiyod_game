@@ -9,7 +9,7 @@ import constants as const
 from game_state import GameState
 from resource_manager import load_high_score
 from level_change import LevelChange
-from sprites import Player1, Player2, Mob, Boss
+from sprites import Mob, Boss
 
 class PlayScreen(GameState):
     def __init__(self, game):
@@ -21,7 +21,6 @@ class PlayScreen(GameState):
         self.sound_last_update = pg.time.get_ticks()
         self.sound = True
         self.game_level = 1
-        # self.number_of_players = 0
         # self.boss = None  # Created first for pause game check
         self.played_high_score_sound = False
 
@@ -86,21 +85,40 @@ class PlayScreen(GameState):
             if event.type == pg.QUIT:
                 self.game.quit()
             elif event.type == pg.KEYDOWN:
-                if event.key == pg.K_ESCAPE:
+                self._handle_keydown(event)
+
+        self.check_joystick()
+
+    def _handle_keydown(self, event):
+        if event.key == pg.K_ESCAPE:
+            self.game.quit()
+        elif event.key == pg.K_p:  # Pause game
+            if self.game.boss is not None:  # Pause the boss sound if boss exists
+                self.game.boss.channel.pause()
+            self.game.change_state("pause")
+
+    def check_joystick(self):
+        try:
+            if self.game.joystick1:
+                # Joystick 1 check
+                if self.game.joystick_handler1.is_button_pressed(8):
                     self.game.quit()
-                if event.key == pg.K_p:  # Pause game
+                if self.game.joystick_handler1.is_button_pressed(9):
                     if self.game.boss is not None:  # Pause the boss sound if boss exists
                         self.game.boss.channel.pause()
                     self.game.change_state("pause")
-            try:
-                if self.game.joystick1.get_button(8) or self.game.joystick2.get_button(6):  # exit game
+
+            if self.game.joystick2:
+                #joystick 2 check
+                if self.game.joystick_handler2.is_button_pressed(6):
                     self.game.quit()
-                if self.game.joystick1.get_button(9) or self.game.joystick2.get_button(7):
+                if self.game.joystick_handler2.is_button_pressed(7):
                     if self.game.boss is not None:  # Pause the boss sound if boss exists
                         self.game.boss.channel.pause()
                     self.game.change_state("pause")
-            except AttributeError:
-                pass
+
+        except AttributeError as e:
+            print(f"Joystick error: {e}")
 
     def update(self):
         self.game.all_sprites.update()
@@ -112,7 +130,7 @@ class PlayScreen(GameState):
         self.add_boss()
 
 		# Check to see if a bullet hit a mob
-        if self.game.number_of_players == 2:
+        if all(item is True for item in self.game.players):
             self.game.enemy_checks.enemy_hit_check(
 			    self.game.mobs, 10, self.game.player2_bullets, False)
             self.game.enemy_checks.enemy_hit_check(
@@ -142,7 +160,7 @@ class PlayScreen(GameState):
                 "level_change", xpos_data=self.alive_players_xpos)
 
 		# Check to see if a mob bullet has hit either player
-        if self.game.number_of_players == 2:
+        if all(item is True for item in self.game.players):
             self.game.player_checks.player_hit_by_bullet(self.game.player2)
         self.game.player_checks.player_hit_by_bullet(self.game.player1)
 
@@ -150,7 +168,7 @@ class PlayScreen(GameState):
             self.game.change_state("gameover")
 
 		# Check to see if a mob has hit either player
-        if self.game.number_of_players == 2:
+        if all(item is True for item in self.game.players):
             self.game.player_checks.player_hit_by_mob(self.game.player2)
         self.game.player_checks.player_hit_by_mob(self.game.player1)
 
@@ -184,7 +202,7 @@ class PlayScreen(GameState):
         meth.draw_lives(surf=self.game.win, x=x, y=y, player=player)
 
     def draw_hud(self):
-        if self.game.number_of_players == 2:
+        if all(item is True for item in self.game.players):
             self.draw_player_score(self.game.p2score, x=557, y=6)
             self.draw_shields(x=608, y=8, shield_amm=self.game.player2.shield)
             self.draw_lives(x=720, y=3, player=self.game.player2)

@@ -222,11 +222,13 @@ class Player1Bullet(pg.sprite.Sprite):
 		if self.rect.bottom < 0:
 			self.kill()
 
+
 class Player2Bullet(Player1Bullet):
 	"""docstring for Player2Bullet"""
 	def __init__(self, x ,y, game):
 		super(Player2Bullet, self).__init__(x ,y, game)
 		self.image = self.game.resource_manager.get_sprite_image("player2_bullet")
+
 
 class MobBullet(Player1Bullet):
 	"""Inherant class"""
@@ -241,6 +243,7 @@ class MobBullet(Player1Bullet):
 		self.rect.y += self.speedy
 		if self.rect.top > const.SCREENHEIGHT:
 			self.kill()	
+
 
 class Mob(pg.sprite.Sprite):
 	direction = True
@@ -289,6 +292,7 @@ class Mob(pg.sprite.Sprite):
 		self.game.all_sprites.add(mob_bullet)
 		self.game.mob_bullets.add(mob_bullet)
 
+
 class StartMob(Mob):
 	"""Inherant class"""
 	def __init__(self, x, y, img_type, frame_rate, game):
@@ -310,6 +314,7 @@ class StartMob(Mob):
                                     f"{self.img_type}_enemy{self.frame}")
 				self.frame += 1
 
+
 class Boss(pg.sprite.Sprite):
 	def __init__(self, game):
 		pg.sprite.Sprite.__init__(self)
@@ -329,6 +334,7 @@ class Boss(pg.sprite.Sprite):
 		if self.rect.right < 0:
 			self.kill()
 			self.sound.fadeout(600)
+
 
 class HyperMob(Mob):
 	"""docstring for HyperMob"""
@@ -368,6 +374,7 @@ class HyperMob(Mob):
 			self.rect.y = random.randrange(-100,-40)
 			self.speedy = random.randrange(1,8)
 
+
 class PowerUp(pg.sprite.Sprite):
 	def __init__(self,center, img_type, game):
 		pg.sprite.Sprite.__init__(self)
@@ -388,7 +395,7 @@ class PowerUp(pg.sprite.Sprite):
 		if hit:
 			self.powerup_collect(self.game.player1)
 
-		if self.game.number_of_players == 2:
+		if all(item is True for item in self.game.players):
 			hit = pg.sprite.collide_circle(self, self.game.player2)
 			if hit:
 				self.powerup_collect(self.game.player2)
@@ -416,6 +423,7 @@ class PowerUp(pg.sprite.Sprite):
 			# self.game.hyperspace() 
 
 		self.kill()
+
 
 class Explosion(pg.sprite.Sprite):
 	def __init__(self, center, img_type, fr_rate, game, snd_type):
@@ -457,6 +465,7 @@ class Explosion(pg.sprite.Sprite):
                             f"{self.img_type}_explosion{self.frame}")
 			self.frame += 1
 
+
 class Shield1(pg.sprite.Sprite):
 	"""docstring for shield"""
 	def __init__(self, xpos, game):
@@ -484,6 +493,7 @@ class Shield1(pg.sprite.Sprite):
 		self.rect.centerx = self.game.player1.rect.centerx
 		self.rect.bottom = const.SCREENHEIGHT - 6
 
+
 class Shield2(Shield1):
 	"""docstring for Shield2"""
 	def __init__(self, xpos, game):
@@ -502,3 +512,22 @@ class Shield2(Shield1):
 		self.rect.centerx = self.game.player2.rect.centerx
 		self.rect.bottom = const.SCREENHEIGHT - 6		
 
+
+class FlashingSprite(pg.sprite.Sprite):
+    def __init__(self, image, rect, flash_interval=500):
+        super().__init__()
+        self.original_image = image
+        self.transparent_image = pg.Surface((rect.width, rect.height), pg.SRCALPHA)
+        self.transparent_image.fill((0, 0, 0, 0))
+        self.image = self.original_image
+        self.rect = rect
+        self.flash_interval = flash_interval
+        self.last_flash_time = pg.time.get_ticks()
+        self.visible = True
+
+    def update(self):
+        current_time = pg.time.get_ticks()
+        if current_time - self.last_flash_time >= self.flash_interval:
+            self.visible = not self.visible
+            self.last_flash_time = current_time
+        self.image = self.original_image if self.visible else self.transparent_image

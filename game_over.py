@@ -10,6 +10,7 @@
 import pygame as pg
 from resource_manager import write_high_score
 from game_state import GameState
+from methods import draw_text
 
 
 class GameOverScreen(GameState):
@@ -32,27 +33,37 @@ class GameOverScreen(GameState):
 			if event.type == pg.QUIT:
 				self.game.quit()
 			if event.type == pg.KEYDOWN:
-				if event.key == pg.K_ESCAPE:
+				self._handle_keydown(event)
+
+		self.check_joystick()
+
+	def	_handle_keydown(self, event):
+		if event.key == pg.K_ESCAPE:
+			self.game.quit()
+		else:
+			self.game.change_state("start")
+
+	def	check_joystick(self):
+		try:
+			if self.game.joystick1:
+				# Select button to return to start screen
+				if self.game.joystick_handler1.is_button_pressed(8) or self.game.joystick2.get_button(6):
 					self.game.quit()
-				else:
+				# Play button to continue
+				if self.game.joystick_handler1.is_button_pressed(9) or self.game.joystick2.get_button(7):
 					self.game.change_state("start")
 
-			# if event.type == pg.KEYUP:
-			# 	if event.key == pg.K_y:  # Continue
-			# 		self.waiting = False
-			# 		self.start_screen_pass = True
-			# try:
-			# 	for joystick in self.joystick_list:
-			# 		# Select button to return to start screen
-			# 		if self.joystick.get_button(8) or self.joystick.get_button(6):
-			# 			self.waiting = False
-			# 		# Play button to continue
-			# 		if self.joystick.get_button(9) or self.joystick.get_button(7):
-			# 			self.waiting = False
-			# 			self.start_screen_pass = True
-			# except AttributeError:
-			# 			pass
-	
+			if self.game.joystick2:
+				# Select button to return to start screen
+				if self.game.joystick_handler2.is_button_pressed(6):
+					self.game.quit()
+				# Play button to continue
+				if self.game.joystick_handler2.is_button_pressed(7):
+					self.game.change_state("start")
+
+		except AttributeError as e:
+			print(f"Joystick error: {e}")
+
 	def update(self):
 		pg.display.update()
 
@@ -60,8 +71,11 @@ class GameOverScreen(GameState):
 		# Game over/continue screen
 		self.game.win.blit(self.background, self.background_rect)
 		# Draw score
-		# if self.number_of_players == 2:
-		# 	meth.draw_text(surf=self.win, text=f"Player 2: {self.p2score}", size=38, x=400, y=535, pos=1)
-		# 	meth.draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
-		# 	pg.mixer.music.fadeout(2000)
+		if all(item is True for item in self.game.players):
+			draw_text(surf=self.win, text=f"Player 2: {self.p2score}", size=38, x=400, y=535, pos=1)
+			draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
+		else:
+			draw_text(surf=self.win, text=f"Player 1: {self.p1score}", size=38, x=400, y=471, pos=1)
+
+			pg.mixer.music.fadeout(2000)
 
