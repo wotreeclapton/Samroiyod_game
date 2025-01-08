@@ -59,19 +59,19 @@ def new_high_score_check(game, sound):
 
 class JoystickHandler:
 	"""Initialize the JoystickHandler with a joystick object."""
-    def __init__(self, joystick):
-        self.joystick = joystick
-        self.previous_states = [False] * joystick.get_numbuttons()
+	def __init__(self, joystick):
+		self.joystick = joystick
+		self.previous_states = [False] * joystick.get_numbuttons()
 
-    def is_button_pressed(self, button_index):
-        """Check if a button was just pressed (debounced)."""
-        if not self.joystick:
-            return False
+	def is_button_pressed(self, button_index):
+		"""Check if a button was just pressed (debounced)."""
+		if not self.joystick:
+			return False
 
-        current_state = self.joystick.get_button(button_index)
-        was_pressed = current_state and not self.previous_states[button_index]
-        self.previous_states[button_index] = current_state  # Update state
-        return was_pressed
+		current_state = self.joystick.get_button(button_index)
+		was_pressed = current_state and not self.previous_states[button_index]
+		self.previous_states[button_index] = current_state  # Update state
+		return was_pressed
 
 
 

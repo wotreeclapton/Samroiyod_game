@@ -41,3 +41,8 @@ BLUE = (0, 0, 255)
 
 POWERUP_TIME = 10000
 # MOVE_DELAY = 550
+
+MOB_POSITIONS = {
+    "Bmobs": [100, 166],  # Y-positions for big mobs
+    "mobs": [227, 297, 367]  # Y-positions for smaller mobs
+}

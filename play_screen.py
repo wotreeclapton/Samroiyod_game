@@ -63,22 +63,21 @@ class PlayScreen(GameState):
 
 		# return(self.p1score)
 
-    def add_mobs(self):
-        Bmobs_y_list = [100, 166]
-        for ypos in Bmobs_y_list:
-            for i in range(10):
-                self.game.bigenemy = Mob(((i+1)*70)-15, ypos, "ep", 50,  self.game)
-                self.game.all_sprites.add(self.game.bigenemy)
-                self.game.Bmobs.add(self.game.bigenemy)
-        mob_y_list = [227, 297, 367]
-        for ypos in mob_y_list:
-            for i in range(10):
-                self.newmob(((i+1)*70)-15, ypos)
 
-    def newmob(self, x, y):
-        self.game.enemy = Mob(x, y, "samroy", 100,  self.game)
-        self.game.all_sprites.add(self.game.enemy)
-        self.game.mobs.add(self.game.enemy)
+    def create_mob(self, x, y, mob_type="samroy", points=100):
+        return Mob(x, y, mob_type, points, self.game)
+
+    def add_mobs(self):
+        for ypos in const.MOB_POSITIONS["Bmobs"]:
+            for i in range(10):
+                mob = self.create_mob(((i + 1) * 70) - 15, ypos, "ep", 50)
+                self.game.all_sprites.add(mob)
+                self.game.Bmobs.add(mob)
+        for ypos in const.MOB_POSITIONS["mobs"]:
+            for i in range(10):
+                mob = self.create_mob(((i + 1) * 70) - 15, ypos)
+                self.game.all_sprites.add(mob)
+                self.game.mobs.add(mob)
 
     def handle_events(self, events):
         for event in events:
@@ -120,6 +119,52 @@ class PlayScreen(GameState):
         except AttributeError as e:
             print(f"Joystick error: {e}")
 
+    def check_player_bullet_collision(self):
+        if not self.game.player1_bullets and not self.game.player2_bullets:
+            return  # Skip collision checks if no bullets exist
+        else:
+            # Check to see if a bullet hit a mob
+            if all(item is True for item in self.game.players):
+                self.game.enemy_checks.enemy_hit_check(
+                    self.game.mobs, 10, self.game.player2_bullets, False)
+                self.game.enemy_checks.enemy_hit_check(
+                    self.game.Bmobs, 30, self.game.player2_bullets, False)
+                self.game.enemy_checks.enemy_hit_check(
+                    self.game.bosses, 100, self.game.player2_bullets, True)
+
+            self.game.enemy_checks.enemy_hit_check(self.game.mobs, 10, self.game.player1_bullets, False)
+            self.game.enemy_checks.enemy_hit_check(
+                self.game.Bmobs, 30, self.game.player1_bullets, False)
+            self.game.enemy_checks.enemy_hit_check(
+                self.game.bosses, 100, self.game.player1_bullets, True)
+
+            # Check if player has killed all the mobs
+            if self.game.level_checks.level_check():
+                #Check what player are alive and make a list of their x positions
+                self.alive_players_xpos = [
+                    player.rect.centerx for player in self.game.player_group]
+    
+                # reset all mobs
+                self.game.enemy_checks.move_delay = 600
+                self.game.enemy_checks.speedx = 5
+                self.game.enemy_checks.mob_direction = True
+                self.add_mobs()
+                #switch to level_change state
+                self.game.change_state(
+                    "level_change", xpos_data=self.alive_players_xpos)
+
+    def check_mob_bullet_collision(self):
+        if not self.game.mob_bullets:
+            return #skip checks if no mob bullets exist
+        else:
+            # Check to see if a mob bullet has hit either player
+            if all(item is True for item in self.game.players):
+                self.game.player_checks.player_hit_by_bullet(self.game.player2)
+            self.game.player_checks.player_hit_by_bullet(self.game.player1)
+
+            if len(self.game.player_group) == 0 and not self.game.player_checks.expl.alive():
+                self.game.change_state("gameover")
+
     def update(self):
         self.game.all_sprites.update()
 
@@ -129,43 +174,8 @@ class PlayScreen(GameState):
 		# Spawn a boss randomly
         self.add_boss()
 
-		# Check to see if a bullet hit a mob
-        if all(item is True for item in self.game.players):
-            self.game.enemy_checks.enemy_hit_check(
-			    self.game.mobs, 10, self.game.player2_bullets, False)
-            self.game.enemy_checks.enemy_hit_check(
-			    self.game.Bmobs, 30, self.game.player2_bullets, False)
-            self.game.enemy_checks.enemy_hit_check(
-			    self.game.bosses, 100, self.game.player2_bullets, True)
-
-        self.game.enemy_checks.enemy_hit_check(self.game.mobs, 10, self.game.player1_bullets, False)
-        self.game.enemy_checks.enemy_hit_check(
-		    self.game.Bmobs, 30, self.game.player1_bullets, False)
-        self.game.enemy_checks.enemy_hit_check(
-		    self.game.bosses, 100, self.game.player1_bullets, True)
-
-		# Check if player has killed all the mobs
-        if self.game.level_checks.level_check():
-            #Check what player are alive and make a list of their x positions
-            self.alive_players_xpos = [
-                player.rect.centerx for player in self.game.player_group]
- 
-			# reset all mobs
-            self.game.enemy_checks.move_delay = 600
-            self.game.enemy_checks.speedx = 5
-            self.game.enemy_checks.mob_direction = True
-            self.add_mobs()
-            #switch to level_change state
-            self.game.change_state(
-                "level_change", xpos_data=self.alive_players_xpos)
-
-		# Check to see if a mob bullet has hit either player
-        if all(item is True for item in self.game.players):
-            self.game.player_checks.player_hit_by_bullet(self.game.player2)
-        self.game.player_checks.player_hit_by_bullet(self.game.player1)
-
-        if len(self.game.player_group) == 0 and not self.game.player_checks.expl.alive():
-            self.game.change_state("gameover")
+        self.check_player_bullet_collision()
+        self.check_mob_bullet_collision()
 
 		# Check to see if a mob has hit either player
         if all(item is True for item in self.game.players):
